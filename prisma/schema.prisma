@@ -1,0 +1,465 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  USER
+  LEADER
+  ADMIN
+}
+
+enum CheckInKind {
+  DAILY
+  MONDAY_REVIEW
+  FRIDAY_REVIEW
+}
+
+enum CheckInSessionStatus {
+  PENDENTE
+  RESPONDIDO
+  IGNORADO
+}
+
+enum TaskStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  AGUARDANDO_TERCEIROS
+  CONCLUIDA
+  CANCELADA
+  ATRASADA
+}
+
+enum TaskOrigin {
+  MANUAL
+  CHECKIN
+  REVISAO_SEMANAL
+}
+
+enum TaskPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum ExtensionStatus {
+  AUTO_APROVADA
+  PENDENTE_APROVACAO
+  APROVADA
+  REJEITADA
+}
+
+enum GoalType {
+  DIARIA
+  SEMANAL
+  MENSAL
+  TRIMESTRAL
+  ANUAL
+}
+
+enum GoalStatus {
+  EM_ANDAMENTO
+  ATINGIDA
+  EM_RISCO
+  VENCIDA
+  CANCELADA
+}
+
+enum GoalUnitType {
+  PERCENTAGE
+  NUMBER
+}
+
+enum AlertType {
+  PRAZO_7D
+  PRAZO_3D
+  PRAZO_1D
+  VENCE_HOJE
+  ATRASADA
+  SEM_PRAZO
+  META_RISCO
+  META_VENCIDA
+  CHECKIN_PENDENTE
+  FRENTE_EM_RISCO
+  FRENTE_SEM_ATUALIZACAO
+  BLOQUEIO_ABERTO
+  PRORROGACAO_PENDENTE
+}
+
+enum FrenteSource {
+  AZURE_DEVOPS
+  TEAMS
+  SLACK
+  DOCUMENTACAO_INTERNA
+  OUTRA
+}
+
+enum BlockerStatus {
+  ABERTO
+  RESOLVIDO
+}
+
+enum WeeklyReportKind {
+  SEGUNDA
+  SEXTA
+}
+
+enum WeeklyReportStatus {
+  RASCUNHO
+  PUBLICADO
+}
+
+// ---------- Core ----------
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String    @unique
+  passwordHash          String
+  role                  Role      @default(USER)
+  theme                 String    @default("LIGHT")
+  active                Boolean   @default(true)
+  onboardingDismissedAt DateTime?
+  createdAt             DateTime  @default(now())
+
+  leaderId String?
+  leader   User?   @relation("TeamHierarchy", fields: [leaderId], references: [id])
+  reports  User[]  @relation("TeamHierarchy")
+
+  checkInSessions      CheckInSession[]
+  ownedTasks           Task[]                 @relation("TaskOwner")
+  createdTasks         Task[]                 @relation("TaskCreatedBy")
+  taskComments         TaskComment[]
+  taskAttachments      TaskAttachment[]
+  extensionRequests    TaskExtensionRequest[] @relation("ExtensionRequestedBy")
+  extensionApprovals   TaskExtensionRequest[] @relation("ExtensionApprovedBy")
+  goals                Goal[]
+  goalProgressEntries  GoalProgress[]
+  alerts               Alert[]
+  auditLogs            AuditLog[]
+
+  ownedFrentes         Frente[]
+  frenteSnapshots      FrenteSnapshot[]
+  deliveries           Delivery[]
+  createdBlockers      Blocker[]         @relation("BlockerCreatedBy")
+  assignedBlockers     Blocker[]         @relation("BlockerOwner")
+  weeklyReports        WeeklyReport[]
+}
+
+// ---------- Check-in engine ----------
+
+model CheckInSlot {
+  id        String   @id @default(cuid())
+  time      String // "HH:mm"
+  label     String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  sessions CheckInSession[]
+}
+
+model CheckInQuestion {
+  id       String      @id @default(cuid())
+  text     String
+  category CheckInKind @default(DAILY)
+  active   Boolean     @default(true)
+  order    Int         @default(0)
+
+  answers CheckInAnswer[]
+}
+
+model CheckInSession {
+  id     String                @id @default(cuid())
+  userId String
+  user   User                  @relation(fields: [userId], references: [id])
+  date   DateTime
+  kind   CheckInKind           @default(DAILY)
+  status CheckInSessionStatus  @default(PENDENTE)
+
+  slotId String?
+  slot   CheckInSlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
+
+  createdAt  DateTime  @default(now())
+  answeredAt DateTime?
+
+  answers CheckInAnswer[]
+
+  @@index([userId, date])
+}
+
+model CheckInAnswer {
+  id            String   @id @default(cuid())
+  sessionId     String
+  session       CheckInSession @relation(fields: [sessionId], references: [id])
+  questionId    String
+  question      CheckInQuestion @relation(fields: [questionId], references: [id])
+  text          String
+  isActionable  Boolean  @default(false)
+  convertedTaskId String? @unique
+  convertedTask   Task?   @relation(fields: [convertedTaskId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+// ---------- Tasks ----------
+
+model Task {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         TaskStatus   @default(PENDENTE)
+  dueDate        DateTime?
+  needsDueDate   Boolean      @default(false)
+  origin         TaskOrigin   @default(MANUAL)
+  category       String?
+  priority       TaskPriority @default(MEDIA)
+  maxExtensions  Int          @default(2)
+  extensionsUsed Int          @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  ownerId String
+  owner   User   @relation("TaskOwner", fields: [ownerId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("TaskCreatedBy", fields: [createdById], references: [id])
+
+  comments          TaskComment[]
+  attachments       TaskAttachment[]
+  extensionRequests TaskExtensionRequest[]
+  checkInAnswer     CheckInAnswer?
+  deliveries        Delivery[]
+  code              TaskCode?
+
+  @@index([ownerId, status])
+  @@index([dueDate])
+}
+
+// Fonte de numeração sequencial para o código de exibição da tarefa
+// (ex.: T-0001). Um Int @id autoincrement só é permitido no SQLite na
+// chave primária da tabela — por isso essa tabela auxiliar dedicada, em vez
+// de um campo autoincrement direto em Task (cuja chave primária é String).
+model TaskCode {
+  id        Int      @id @default(autoincrement())
+  taskId    String   @unique
+  task      Task     @relation(fields: [taskId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model TaskCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model TaskAttachment {
+  id           String   @id @default(cuid())
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id])
+  filename     String
+  path         String
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model TaskExtensionRequest {
+  id              String          @id @default(cuid())
+  taskId          String
+  task            Task            @relation(fields: [taskId], references: [id])
+  requestedById   String
+  requestedBy     User            @relation("ExtensionRequestedBy", fields: [requestedById], references: [id])
+  previousDueDate DateTime
+  newDueDate      DateTime
+  justification   String
+  status          ExtensionStatus @default(AUTO_APROVADA)
+  approvedById    String?
+  approvedBy      User?           @relation("ExtensionApprovedBy", fields: [approvedById], references: [id])
+  createdAt       DateTime        @default(now())
+  resolvedAt      DateTime?
+}
+
+// ---------- Goals ----------
+
+model Goal {
+  id              String     @id @default(cuid())
+  title           String
+  description     String?
+  type            GoalType
+  indicator       String
+  targetValue     Float
+  currentValue    Float      @default(0)
+  unit            String
+  unitType        GoalUnitType @default(NUMBER)
+  unitLabel       String?
+  startDate       DateTime
+  dueDate         DateTime
+  successCriteria String
+  status          GoalStatus @default(EM_ANDAMENTO)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  progress GoalProgress[]
+
+  @@index([ownerId, status])
+}
+
+model GoalProgress {
+  id          String   @id @default(cuid())
+  goalId      String
+  goal        Goal     @relation(fields: [goalId], references: [id])
+  value       Float
+  note        String?
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// ---------- Alerts & audit ----------
+
+model Alert {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  type         AlertType
+  relatedType  String?
+  relatedId    String?
+  message      String
+  read         Boolean   @default(false)
+  snoozedUntil DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, read])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  action     String
+  field      String?
+  oldValue   String?
+  newValue   String?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// ---------- Entrega Semanal (frentes, entregas, bloqueios, relatório) ----------
+
+model Frente {
+  id            String       @id @default(cuid())
+  name          String
+  description   String?
+  indicator     String
+  unit          String
+  baselineValue Float
+  currentValue  Float
+  targetValue   Float
+  targetDate    DateTime
+  source        FrenteSource @default(OUTRA)
+  sourceDetail  String?
+  azureWorkItemTypes String? // tipos de work item (separados por vírgula) usados na sincronização automática com Azure DevOps
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  snapshots  FrenteSnapshot[]
+  deliveries Delivery[]
+  blockers   Blocker[]
+
+  @@index([active])
+}
+
+model FrenteSnapshot {
+  id          String   @id @default(cuid())
+  frenteId    String
+  frente      Frente   @relation(fields: [frenteId], references: [id])
+  value       Float
+  note        String?
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([frenteId, createdAt])
+}
+
+model Delivery {
+  id       String @id @default(cuid())
+  frenteId String
+  frente   Frente @relation(fields: [frenteId], references: [id])
+  title    String
+  evidence String
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id])
+
+  deliveredById String
+  deliveredBy   User     @relation(fields: [deliveredById], references: [id])
+  deliveredAt   DateTime @default(now())
+
+  @@index([frenteId, deliveredAt])
+}
+
+model Blocker {
+  id          String        @id @default(cuid())
+  frenteId    String
+  frente      Frente        @relation(fields: [frenteId], references: [id])
+  description String
+  impact      String
+  status      BlockerStatus @default(ABERTO)
+
+  ownerToUnblockId   String?
+  ownerToUnblock     User?   @relation("BlockerOwner", fields: [ownerToUnblockId], references: [id])
+  ownerToUnblockName String?
+
+  createdById String
+  createdBy   User     @relation("BlockerCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([frenteId, status])
+}
+
+model WeeklyReport {
+  id        String             @id @default(cuid())
+  kind      WeeklyReportKind
+  weekStart DateTime
+  status    WeeklyReportStatus @default(RASCUNHO)
+  hoje      String?
+  semana    String?
+  vitoria   String?
+
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+
+  @@index([createdById, weekStart])
+}
