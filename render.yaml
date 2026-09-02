@@ -13,3 +13,5 @@ services:
         value: file:./dev.db
       - key: AUTH_SECRET
         generateValue: true
+      - key: AUTH_TRUST_HOST
+        value: "true"
