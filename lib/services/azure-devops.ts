@@ -16,18 +16,39 @@ function authHeader() {
 }
 
 async function azureFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`https://dev.azure.com/${ORG}${path}`, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Authorization: authHeader(),
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    throw new Error(`Azure DevOps API respondeu ${res.status} em ${path}`);
+  let res: Response;
+  try {
+    res = await fetch(`https://dev.azure.com/${ORG}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+      // Um PAT inválido/expirado não responde 401 — o Azure DevOps redireciona
+      // (302) para a tela de sign-in. Sem "manual", fetch() segue o redirect e
+      // a resposta HTML de login passa em res.ok, quebrando mais adiante em
+      // res.json() com um erro de parse que não indica a causa real.
+      redirect: "manual",
+    });
+  } catch (err) {
+    throw new Error(
+      `Falha de rede ao chamar o Azure DevOps em ${path}: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
+
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(
+      `Azure DevOps redirecionou a chamada em ${path} (status ${res.status}) — isso normalmente indica um AZURE_DEVOPS_PAT inválido ou expirado, não um problema de rede.`
+    );
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Azure DevOps API respondeu ${res.status} em ${path}${body ? `: ${body.slice(0, 300)}` : ""}`);
+  }
+
   return res.json();
 }
 
