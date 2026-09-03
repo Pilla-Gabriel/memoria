@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Menu, Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
-import { initialsForName } from "@/lib/base-color";
+import { initialsForName, hexToRgba } from "@/lib/base-color";
+
+// Tempo em que o botão "Confirmar" fica desabilitado após abrir o passo de
+// confirmação — pequeno o bastante para não incomodar quem está prestando
+// atenção, grande o bastante para quebrar o "clique no piloto automático"
+// de quem clica em tudo sem ler.
+const CONFIRM_DELAY_MS = 600;
 
 const ROLE_LABEL: Record<string, string> = {
   USER: "Usuário",
@@ -31,6 +37,10 @@ function BaseIndicator({
   // que um clique acidental no menu troque toda a base de dados sem aviso.
   const [pending, setPending] = useState<AccessibleBase | null>(null);
   const [switching, setSwitching] = useState(false);
+  // Fica true por CONFIRM_DELAY_MS depois de abrir a confirmação — sem isso,
+  // alguém acostumado a clicar em sequência sem ler emenda os dois cliques
+  // (base errada → Confirmar) antes mesmo do texto aparecer.
+  const [confirmReady, setConfirmReady] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const canSwitch = accessibleBases.length > 1;
 
@@ -44,6 +54,15 @@ function BaseIndicator({
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!pending) {
+      setConfirmReady(false);
+      return;
+    }
+    const id = setTimeout(() => setConfirmReady(true), CONFIRM_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [pending]);
 
   async function confirmSwitch(base: AccessibleBase) {
     setSwitching(true);
@@ -65,22 +84,36 @@ function BaseIndicator({
 
   const badge = (
     <span
-      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
       style={{ background: activeBase.color }}
     >
       {initialsForName(activeBase.name)}
     </span>
   );
 
+  // Pilula com o tom da própria base — o indicador de base é a informação
+  // mais consequente do cabeçalho (define que dados você está vendo/criando)
+  // e não pode competir visualmente em pé de igualdade com ícones
+  // secundários como tema e sino.
+  const pillStyle = {
+    background: hexToRgba(activeBase.color, 0.12),
+    borderColor: hexToRgba(activeBase.color, 0.35),
+  };
+
   if (!canSwitch) {
     return (
-      <div className="flex items-center gap-2 px-1" aria-label={`Base ativa: ${activeBase.name}`}>
+      <div
+        className="flex items-center gap-2 px-2.5 py-1 rounded-full border"
+        style={pillStyle}
+        aria-label={`Base ativa: ${activeBase.name}`}
+        title="Sua conta só tem acesso a esta base."
+      >
         {badge}
         <div className="hidden sm:flex flex-col leading-tight text-left">
-          <span className="text-[10px] uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
+          <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: "var(--color-text-secondary)" }}>
             Base
           </span>
-          <span className="text-sm font-semibold">{activeBase.name}</span>
+          <span className="text-sm font-bold">{activeBase.name}</span>
         </div>
       </div>
     );
@@ -94,16 +127,17 @@ function BaseIndicator({
           setOpen((o) => !o);
           setPending(null);
         }}
-        className="flex items-center gap-2 px-1.5 py-1 rounded-full hover:bg-black/5"
+        className="flex items-center gap-2 px-2.5 py-1 rounded-full border hover:brightness-95"
+        style={pillStyle}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {badge}
         <div className="hidden sm:flex flex-col leading-tight text-left">
-          <span className="text-[10px] uppercase tracking-wide" style={{ color: "var(--color-text-secondary)" }}>
+          <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: "var(--color-text-secondary)" }}>
             Base
           </span>
-          <span className="text-sm font-semibold">{activeBase.name}</span>
+          <span className="text-sm font-bold">{activeBase.name}</span>
         </div>
         <ChevronDown size={15} style={{ color: "var(--color-text-secondary)" }} />
       </button>
@@ -124,10 +158,10 @@ function BaseIndicator({
                 <button
                   type="button"
                   onClick={() => confirmSwitch(pending)}
-                  disabled={switching}
+                  disabled={switching || !confirmReady}
                   className="btn-primary flex-1 py-1.5 text-xs disabled:opacity-60"
                 >
-                  {switching ? "Trocando..." : "Confirmar"}
+                  {switching ? "Trocando..." : confirmReady ? "Confirmar" : "Aguarde..."}
                 </button>
                 <button
                   type="button"
