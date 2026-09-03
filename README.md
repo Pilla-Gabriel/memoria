@@ -46,6 +46,44 @@ baixando o binário no Linux) e abre um túnel rápido, exibindo uma URL públic
 temporária (`https://*.trycloudflare.com`) — não é necessário ter conta ou
 domínio no Cloudflare.
 
+## Rodar permanentemente em uma máquina própria (túnel nomeado do Cloudflare)
+
+Para deixar o MEMÓRIA no ar continuamente numa máquina (ex: um PC/servidor
+Windows), em vez do túnel rápido e temporário da seção acima, use um **túnel
+nomeado**, vinculado a uma conta Cloudflare — ele fica registrado no
+dashboard e não muda de URL.
+
+1. **Suba o app como processo de produção nessa máquina:**
+   ```bash
+   npm install
+   cp .env.example .env      # preencha AUTH_SECRET e as demais variáveis
+   npx prisma migrate deploy
+   npx prisma db seed        # apenas na primeira vez
+   npm run build
+   npm run start              # roda em http://localhost:3000
+   ```
+   Para sobreviver a reinicializações/logout no Windows, registre esse
+   processo como serviço (ex: com o [NSSM](https://nssm.cc/)), apontando para
+   `npm run start` com o diretório de trabalho na pasta do projeto.
+
+2. **Crie o túnel nomeado no dashboard da Cloudflare** (Zero Trust → Networks
+   → Tunnels → Create a tunnel) e instale-o como serviço na máquina com o
+   comando gerado lá:
+   ```
+   cloudflared.exe service install <token>
+   ```
+   Isso registra o serviço `Cloudflared` no Windows, iniciando junto com o
+   sistema. Confira com `sc query Cloudflared` (estado `RUNNING`).
+
+   > **Nunca cole esse token em commits, issues ou mensagens** — ele dá
+   > acesso para criar conexões em nome do seu túnel. Se ele for exposto (ex:
+   > compartilhado em um chat), revogue-o e gere um novo no dashboard.
+
+3. **Configure o "Public Hostname"** do túnel, no mesmo dashboard, apontando
+   para `http://localhost:3000` (ou a porta configurada em `PORT`).
+
+4. Acesse a URL pública configurada para confirmar que o app está no ar.
+
 ## Contas de demonstração
 
 Todas com a senha `memoria123`:
