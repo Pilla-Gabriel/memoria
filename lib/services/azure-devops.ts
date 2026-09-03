@@ -1,3 +1,5 @@
+import { buildSprintGroups, buildHoursBySprint, buildHoursByPbi, buildHoursByAssignee, type WorkItemLite } from "@/lib/azure-work-items";
+
 const ORG = process.env.AZURE_DEVOPS_ORG;
 const DEFAULT_PROJECT = process.env.AZURE_DEVOPS_PROJECT;
 const PAT = process.env.AZURE_DEVOPS_PAT;
@@ -118,19 +120,6 @@ function shortIterationLabel(iterationPath: string | undefined, project: string)
   return iterationPath.startsWith(prefix) ? iterationPath.slice(prefix.length) : iterationPath;
 }
 
-// Ordem de prioridade pedida: PBI antes de Task. Tipos não listados aqui
-// entram depois, em ordem alfabética.
-const TYPE_ORDER = ["Product Backlog Item", "Bug", "Task"];
-
-function typeSortIndex(type: string) {
-  const idx = TYPE_ORDER.indexOf(type);
-  return idx === -1 ? TYPE_ORDER.length : idx;
-}
-
-type StateGroup = { state: string; count: number; hours: number; estimatedHours: number };
-type TypeGroup = { type: string; count: number; hours: number; estimatedHours: number; states: StateGroup[] };
-type SprintGroup = { sprint: string; count: number; hours: number; estimatedHours: number; types: TypeGroup[] };
-
 /**
  * Consulta todos os work items de um projeto do Azure DevOps e agrupa
  * hierarquicamente por Sprint > Type (PBI antes de Task) > State, com o
@@ -141,6 +130,11 @@ type SprintGroup = { sprint: string; count: number; hours: number; estimatedHour
  * horas por PBI (somando as horas das Tasks filhas via System.Parent).
  * Quando um item não tem o campo preenchido, ele entra como 0 — refletindo
  * o que está de fato registrado, sem inventar números.
+ *
+ * Inclui a lista de itens (`items`, já no formato leve WorkItemLite) junto
+ * com os agregados: o cliente usa isso para recalcular sprints/hoursBySprint
+ * /hoursByPbi/hoursByAssignee ao aplicar os filtros de sprint e responsável,
+ * sem precisar de uma nova requisição a cada mudança de filtro.
  */
 export async function getWorkItemBreakdown(projectOverride?: string) {
   if (!isAzureDevOpsConfigured()) {
@@ -151,111 +145,29 @@ export async function getWorkItemBreakdown(projectOverride?: string) {
   const escapedProject = escapeWiql(project);
 
   const ids = await idsByWiql(project, `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${escapedProject}'`);
-  const items = ids.length > 0 ? await getWorkItemsBatch(project, ids) : [];
+  const rawItems = ids.length > 0 ? await getWorkItemsBatch(project, ids) : [];
 
-  // Sprint > Type > State
-  const sprintMap = new Map<string, SprintGroup>();
-  for (const item of items) {
-    const type = item.fields["System.WorkItemType"] ?? "(sem tipo)";
-    const state = item.fields["System.State"] ?? "(sem estado)";
-    const sprint = shortIterationLabel(item.fields["System.IterationPath"], project);
-    const hours = actualHours(item);
-    const estimated = estimatedHours(item);
+  const items: WorkItemLite[] = rawItems.map((item) => ({
+    id: item.id,
+    type: item.fields["System.WorkItemType"] ?? "(sem tipo)",
+    state: item.fields["System.State"] ?? "(sem estado)",
+    sprint: shortIterationLabel(item.fields["System.IterationPath"], project),
+    assignee: assigneeName(item),
+    parentId: item.fields["System.Parent"] ?? null,
+    title: item.fields["System.Title"] ?? "",
+    hours: actualHours(item),
+    estimatedHours: estimatedHours(item),
+  }));
 
-    let sprintGroup = sprintMap.get(sprint);
-    if (!sprintGroup) {
-      sprintGroup = { sprint, count: 0, hours: 0, estimatedHours: 0, types: [] };
-      sprintMap.set(sprint, sprintGroup);
-    }
-    sprintGroup.count += 1;
-    sprintGroup.hours += hours;
-    sprintGroup.estimatedHours += estimated;
-
-    let typeGroup = sprintGroup.types.find((t) => t.type === type);
-    if (!typeGroup) {
-      typeGroup = { type, count: 0, hours: 0, estimatedHours: 0, states: [] };
-      sprintGroup.types.push(typeGroup);
-    }
-    typeGroup.count += 1;
-    typeGroup.hours += hours;
-    typeGroup.estimatedHours += estimated;
-
-    let stateGroup = typeGroup.states.find((s) => s.state === state);
-    if (!stateGroup) {
-      stateGroup = { state, count: 0, hours: 0, estimatedHours: 0 };
-      typeGroup.states.push(stateGroup);
-    }
-    stateGroup.count += 1;
-    stateGroup.hours += hours;
-    stateGroup.estimatedHours += estimated;
-  }
-
-  const sprints = Array.from(sprintMap.values())
-    .sort((a, b) => a.sprint.localeCompare(b.sprint, "pt-BR", { numeric: true }))
-    .map((s) => ({
-      ...s,
-      types: s.types
-        .sort((a, b) => typeSortIndex(a.type) - typeSortIndex(b.type))
-        .map((t) => ({ ...t, states: t.states.sort((a, b) => a.state.localeCompare(b.state, "pt-BR")) })),
-    }));
-
-  // Horas por Sprint
-  const hoursBySprint = sprints.map((s) => ({ sprint: s.sprint, hours: s.hours, estimatedHours: s.estimatedHours, count: s.count }));
-
-  // Horas por PBI: soma das Tasks filhas (via System.Parent) sob cada PBI
-  const pbiById = new Map<number, string>();
-  for (const item of items) {
-    if (item.fields["System.WorkItemType"] === "Product Backlog Item") {
-      pbiById.set(item.id, item.fields["System.Title"] ?? `PBI ${item.id}`);
-    }
-  }
-  const hoursByPbiMap = new Map<
-    number,
-    { pbiId: number; pbiTitle: string; hours: number; estimatedHours: number; taskCount: number }
-  >();
-  for (const item of items) {
-    const parentId = item.fields["System.Parent"];
-    if (!parentId || !pbiById.has(parentId)) continue;
-    const hours = actualHours(item);
-    const estimated = estimatedHours(item);
-    const existing = hoursByPbiMap.get(parentId);
-    if (existing) {
-      existing.hours += hours;
-      existing.estimatedHours += estimated;
-      existing.taskCount += 1;
-    } else {
-      hoursByPbiMap.set(parentId, {
-        pbiId: parentId,
-        pbiTitle: pbiById.get(parentId)!,
-        hours,
-        estimatedHours: estimated,
-        taskCount: 1,
-      });
-    }
-  }
-  const hoursByPbi = Array.from(hoursByPbiMap.values()).sort((a, b) => b.hours - a.hours || a.pbiId - b.pbiId);
-
-  // Horas por responsável (Estimada x Realizada), somando todos os work items atribuídos
-  const hoursByAssigneeMap = new Map<string, { assignee: string; hours: number; estimatedHours: number; count: number }>();
-  for (const item of items) {
-    const assignee = assigneeName(item);
-    const hours = actualHours(item);
-    const estimated = estimatedHours(item);
-    const existing = hoursByAssigneeMap.get(assignee);
-    if (existing) {
-      existing.hours += hours;
-      existing.estimatedHours += estimated;
-      existing.count += 1;
-    } else {
-      hoursByAssigneeMap.set(assignee, { assignee, hours, estimatedHours: estimated, count: 1 });
-    }
-  }
-  const hoursByAssignee = Array.from(hoursByAssigneeMap.values()).sort((a, b) => b.hours - a.hours);
+  const sprints = buildSprintGroups(items);
+  const hoursBySprint = buildHoursBySprint(sprints);
+  const hoursByPbi = buildHoursByPbi(items);
+  const hoursByAssignee = buildHoursByAssignee(items);
 
   const totalHours = sprints.reduce((acc, s) => acc + s.hours, 0);
   const totalEstimatedHours = sprints.reduce((acc, s) => acc + s.estimatedHours, 0);
-  const anyHoursTracked = items.some((i) => typeof i.fields["Custom.Horasefetivas"] === "number");
-  const anyEstimatedHoursTracked = items.some((i) => typeof i.fields["Custom.Horasestimadas"] === "number");
+  const anyHoursTracked = rawItems.some((i) => typeof i.fields["Custom.Horasefetivas"] === "number");
+  const anyEstimatedHoursTracked = rawItems.some((i) => typeof i.fields["Custom.Horasestimadas"] === "number");
 
   return {
     project,
@@ -264,6 +176,7 @@ export async function getWorkItemBreakdown(projectOverride?: string) {
     totalEstimatedHours,
     anyHoursTracked,
     anyEstimatedHoursTracked,
+    items,
     sprints,
     hoursBySprint,
     hoursByPbi,

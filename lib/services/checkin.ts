@@ -89,6 +89,19 @@ export async function ensureSessionsForSlot(slotId: string, date: Date = new Dat
   return created;
 }
 
+// Sem isso, uma sessão de check-in nunca respondida ficava PENDENTE para
+// sempre — o único sinal de que ela existia era um alerta que se repetia
+// todo dia e podia ser adiado indefinidamente, sem nunca virar um registro
+// negativo explícito nem aparecer em métrica nenhuma.
+export async function markStaleSessionsAsIgnored(date: Date = new Date()) {
+  const today = startOfDay(date);
+  const { count } = await prisma.checkInSession.updateMany({
+    where: { status: "PENDENTE", date: { lt: today } },
+    data: { status: "IGNORADO" },
+  });
+  return count;
+}
+
 export async function ensureWeeklyReviewSessions(
   kind: "MONDAY_REVIEW" | "FRIDAY_REVIEW",
   date: Date = new Date()

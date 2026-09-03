@@ -15,6 +15,7 @@ import {
   Award,
   XCircle,
   MessageCircleQuestion,
+  MessageCircleX,
   Send,
 } from "lucide-react";
 
@@ -27,8 +28,10 @@ type Summary = {
   checkinRecovered: number;
   goalsAtingidas: number;
   goalsVencidas: number;
+  checkinsIgnorados: number;
   topProductive: { id: string; name: string; completedCount: number }[];
   topDelayed: { id: string; name: string; countDelays: number; classification: string }[];
+  topIgnoredCheckins: { id: string; name: string; ignoredCheckinsCount: number }[];
   entregaSemanal: {
     totalFrentes: number;
     frentesEmRisco: number;
@@ -106,6 +109,7 @@ export default function ExecutivoPage() {
         <StatCard label="Metas atingidas" value={data.goalsAtingidas} icon={Award} tone="success" href="/metas?status=ATINGIDA" />
         <StatCard label="Metas vencidas" value={data.goalsVencidas} icon={XCircle} tone="danger" href="/metas?status=VENCIDA" />
         <StatCard label="Recuperados via check-in" value={data.checkinRecovered} icon={MessageCircleQuestion} tone="primary" href="/checkin" />
+        <StatCard label="Check-ins ignorados" value={data.checkinsIgnorados} icon={MessageCircleX} tone="danger" href="/checkin" />
       </div>
 
       {/* O card completo (Frentes/Em risco/Bloqueios) já vive no Painel — aqui fica
@@ -186,6 +190,25 @@ export default function ExecutivoPage() {
             )}
           </ul>
         </div>
+
+        <div className="card p-5">
+          <h2 className="font-semibold mb-4">Responsáveis com mais check-ins ignorados</h2>
+          <ul className="space-y-2 text-sm">
+            {data.topIgnoredCheckins.map((u, i) => (
+              <li key={u.id} className="flex items-center justify-between">
+                <span>
+                  {i + 1}. {u.name}
+                </span>
+                <span className="font-semibold" style={{ color: "var(--color-danger)" }}>
+                  {u.ignoredCheckinsCount} ignorado(s)
+                </span>
+              </li>
+            ))}
+            {data.topIgnoredCheckins.length === 0 && (
+              <p style={{ color: "var(--color-text-secondary)" }}>Nenhum check-in ignorado. Ótimo sinal!</p>
+            )}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -199,7 +222,7 @@ function ExecutivoSkeleton() {
         <Skeleton className="h-4 w-80" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="h-[76px]" />
         ))}
       </div>
@@ -207,6 +230,7 @@ function ExecutivoSkeleton() {
       <Skeleton className="h-[220px]" />
       <Skeleton className="h-[280px]" />
       <div className="grid gap-5 lg:grid-cols-2">
+        <Skeleton className="h-[160px]" />
         <Skeleton className="h-[160px]" />
         <Skeleton className="h-[160px]" />
       </div>
