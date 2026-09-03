@@ -145,7 +145,7 @@ function BaseIndicator({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-64 rounded-xl border shadow-lg z-40 overflow-hidden"
+          className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border shadow-lg z-40 overflow-hidden"
           style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
           {pending ? (
