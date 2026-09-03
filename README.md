@@ -30,6 +30,22 @@ npm run dev              # sobe o app + agendador em http://localhost:3000
 
 `npm run build` e `npm run start` empacotam e rodam a versão de produção (o `start` também sobe o custom server com o agendador).
 
+## Expor o app fora da rede local (Cloudflare Tunnel)
+
+Para testar o app a partir de outro dispositivo sem estar na mesma rede/VPN,
+rode em outro terminal, com o `npm run dev` já ativo:
+
+```bash
+npm run tunnel            # expõe http://localhost:3000
+PORT=4000 npm run tunnel  # expõe outra porta
+```
+
+O script (`scripts/tunnel.sh`) instala o [cloudflared](https://github.com/cloudflare/cloudflared)
+automaticamente caso ele ainda não esteja no PATH (via Homebrew no macOS, ou
+baixando o binário no Linux) e abre um túnel rápido, exibindo uma URL pública
+temporária (`https://*.trycloudflare.com`) — não é necessário ter conta ou
+domínio no Cloudflare.
+
 ## Contas de demonstração
 
 Todas com a senha `memoria123`:
