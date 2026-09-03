@@ -46,12 +46,11 @@ baixando o binário no Linux) e abre um túnel rápido, exibindo uma URL públic
 temporária (`https://*.trycloudflare.com`) — não é necessário ter conta ou
 domínio no Cloudflare.
 
-## Rodar permanentemente em uma máquina própria (túnel nomeado do Cloudflare)
+## Rodar permanentemente em uma máquina própria
 
 Para deixar o MEMÓRIA no ar continuamente numa máquina (ex: um PC/servidor
-Windows), em vez do túnel rápido e temporário da seção acima, use um **túnel
-nomeado**, vinculado a uma conta Cloudflare — ele fica registrado no
-dashboard e não muda de URL.
+Windows), o app e o túnel precisam sobreviver a reinicializações/logout —
+por isso os dois rodam como serviço do Windows.
 
 1. **Suba o app como processo de produção nessa máquina:**
    ```bash
@@ -76,23 +75,44 @@ dashboard e não muda de URL.
    (estado `RUNNING`), do mesmo jeito que foi feito para o serviço
    `Cloudflared`.
 
-2. **Crie o túnel nomeado no dashboard da Cloudflare** (Zero Trust → Networks
-   → Tunnels → Create a tunnel) e instale-o como serviço na máquina com o
-   comando gerado lá:
+2. **Registre o túnel do Cloudflare como serviço.** Duas opções, dependendo
+   de você ter ou não um domínio próprio adicionado à sua conta Cloudflare:
+
+   **Opção A — sem domínio (túnel rápido):** a URL pública muda a cada vez
+   que o serviço reinicia (reboot, queda de energia, etc.), mas não exige
+   conta nem domínio. Registre com o NSSM:
+   ```
+   nssm install MemoriaTunnel
+   ```
+   - **Path**: caminho completo do `cloudflared.exe` (ache com `where cloudflared`)
+   - **Arguments**: `tunnel --url http://localhost:3000`
+   - Na aba **I/O**, defina um arquivo em "Output (stdout)" e "Error (stderr)"
+     (ex: `C:\memoria\tunnel.log`) — é ali que a URL pública gerada aparece
+     a cada início do serviço.
+   - Na aba **Exit actions**, marque para reiniciar a aplicação se ela cair.
+
+   Depois: `nssm start MemoriaTunnel` e, para achar a URL atual:
+   ```
+   findstr trycloudflare C:\memoria\tunnel.log
+   ```
+
+   **Opção B — com domínio (túnel nomeado, URL fixa):** crie o túnel no
+   dashboard da Cloudflare (Zero Trust → Networks → Tunnels → Create a
+   tunnel) e instale-o como serviço com o comando gerado lá:
    ```
    cloudflared.exe service install <token>
    ```
-   Isso registra o serviço `Cloudflared` no Windows, iniciando junto com o
-   sistema. Confira com `sc query Cloudflared` (estado `RUNNING`).
+   Isso registra o serviço `Cloudflared` no Windows. Confira com
+   `sc query Cloudflared` (estado `RUNNING`), depois configure o **Public
+   Hostname** do túnel no mesmo dashboard apontando para
+   `http://localhost:3000`.
 
    > **Nunca cole esse token em commits, issues ou mensagens** — ele dá
    > acesso para criar conexões em nome do seu túnel. Se ele for exposto (ex:
    > compartilhado em um chat), revogue-o e gere um novo no dashboard.
 
-3. **Configure o "Public Hostname"** do túnel, no mesmo dashboard, apontando
-   para `http://localhost:3000` (ou a porta configurada em `PORT`).
-
-4. Acesse a URL pública configurada para confirmar que o app está no ar.
+3. Acesse a URL pública (a do log, na Opção A, ou a do Public Hostname, na
+   Opção B) para confirmar que o app está no ar.
 
 ## Contas de demonstração
 
