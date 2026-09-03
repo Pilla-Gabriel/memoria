@@ -3,6 +3,7 @@ import { daysBetween, evaluateGoalStatus, NO_DUE_DATE_GRACE_DAYS } from "@/lib/s
 import { evaluateFrenteRisk } from "@/lib/services/frentes";
 import { markStaleSessionsAsIgnored } from "@/lib/services/checkin";
 import { logAudit } from "@/lib/audit";
+import { requireBaseId } from "@/lib/base-context";
 
 const FRENTE_STALE_DAYS = 5;
 const AUTO_DUE_DATE_WINDOW_DAYS = 3;
@@ -44,7 +45,7 @@ async function createAlertOnce(params: {
   });
   if (existing) return;
 
-  await prisma.alert.create({ data: params });
+  await prisma.alert.create({ data: { ...params, baseId: requireBaseId() } });
 }
 
 export async function generateTaskAlerts() {

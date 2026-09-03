@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireBaseId } from "@/lib/base-context";
 
 export async function logAudit(params: {
   entityType: string;
@@ -18,6 +19,7 @@ export async function logAudit(params: {
       oldValue: params.oldValue ?? null,
       newValue: params.newValue ?? null,
       userId: params.userId,
+      baseId: requireBaseId(),
     },
   });
 }

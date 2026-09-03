@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { syncBacklogCompletion, isAzureDevOpsConfigured } from "@/lib/services/azure-devops";
+import { withBase } from "@/lib/with-base";
+import { getScopedFrente } from "@/lib/base-guards";
 
-export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
-  if (!isAzureDevOpsConfigured()) {
+export const POST = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
+  if (!(await isAzureDevOpsConfigured())) {
     return NextResponse.json({ error: "Integração com Azure DevOps não configurada." }, { status: 400 });
   }
 
   const { id } = await ctx.params;
-  const frente = await prisma.frente.findUnique({ where: { id } });
+  const frente = await getScopedFrente(id);
   if (!frente) return NextResponse.json({ error: "Frente não encontrada" }, { status: 404 });
 
   if (frente.source !== "AZURE_DEVOPS" || !frente.azureWorkItemTypes) {
@@ -54,4 +52,4 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   });
 
   return NextResponse.json({ frente: updated, result });
-}
+});

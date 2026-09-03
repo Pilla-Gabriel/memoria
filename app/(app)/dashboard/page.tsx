@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveBaseId } from "@/lib/active-base";
+import { runWithBase } from "@/lib/base-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { EntregaSemanalSummaryPanel } from "@/components/entrega-semanal/summary-panel";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/dashboard/onboarding-checklist";
@@ -25,7 +28,11 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const userId = session!.user.id;
+  if (!session?.user) redirect("/login");
+  const userId = session.user.id;
+
+  const baseId = await getActiveBaseId(session.user);
+  if (!baseId) redirect("/selecionar-base");
 
   const [
     total,
@@ -43,39 +50,43 @@ export default async function DashboardPage() {
     checkinsRespondidos,
     activeSlots,
     currentUser,
-  ] = await Promise.all([
-    prisma.task.count({ where: { ownerId: userId } }),
-    prisma.task.count({ where: { ownerId: userId, status: "PENDENTE" } }),
-    prisma.task.count({ where: { ownerId: userId, status: "EM_ANDAMENTO" } }),
-    prisma.task.count({ where: { ownerId: userId, status: "AGUARDANDO_TERCEIROS" } }),
-    prisma.task.count({ where: { ownerId: userId, status: "CONCLUIDA" } }),
-    prisma.task.count({ where: { ownerId: userId, status: "ATRASADA" } }),
-    prisma.task.count({ where: { ownerId: userId, needsDueDate: true, dueDate: null } }),
-    prisma.task.findMany({
-      where: {
-        ownerId: userId,
-        status: { notIn: ["CONCLUIDA", "CANCELADA"] },
-        dueDate: { gte: new Date(), lte: new Date(Date.now() + 7 * 86400000) },
-      },
-      orderBy: { dueDate: "asc" },
-      take: 5,
-    }),
-    prisma.goal.count({ where: { ownerId: userId } }),
-    prisma.goal.count({ where: { ownerId: userId, status: "ATINGIDA" } }),
-    prisma.goal.count({ where: { ownerId: userId, status: "EM_RISCO" } }),
-    prisma.checkInSession.count({ where: { userId, status: "PENDENTE" } }),
-    prisma.checkInSession.count({ where: { userId, status: "RESPONDIDO" } }),
-    prisma.checkInSlot.count({ where: { active: true } }),
-    prisma.user.findUnique({ where: { id: userId }, select: { onboardingDismissedAt: true } }),
-  ]);
+    cancelada,
+  ] = await runWithBase(baseId, () =>
+    Promise.all([
+      prisma.task.count({ where: { ownerId: userId } }),
+      prisma.task.count({ where: { ownerId: userId, status: "PENDENTE" } }),
+      prisma.task.count({ where: { ownerId: userId, status: "EM_ANDAMENTO" } }),
+      prisma.task.count({ where: { ownerId: userId, status: "AGUARDANDO_TERCEIROS" } }),
+      prisma.task.count({ where: { ownerId: userId, status: "CONCLUIDA" } }),
+      prisma.task.count({ where: { ownerId: userId, status: "ATRASADA" } }),
+      prisma.task.count({ where: { ownerId: userId, needsDueDate: true, dueDate: null } }),
+      prisma.task.findMany({
+        where: {
+          ownerId: userId,
+          status: { notIn: ["CONCLUIDA", "CANCELADA"] },
+          dueDate: { gte: new Date(), lte: new Date(Date.now() + 7 * 86400000) },
+        },
+        orderBy: { dueDate: "asc" },
+        take: 5,
+      }),
+      prisma.goal.count({ where: { ownerId: userId } }),
+      prisma.goal.count({ where: { ownerId: userId, status: "ATINGIDA" } }),
+      prisma.goal.count({ where: { ownerId: userId, status: "EM_RISCO" } }),
+      prisma.checkInSession.count({ where: { userId, status: "PENDENTE" } }),
+      prisma.checkInSession.count({ where: { userId, status: "RESPONDIDO" } }),
+      prisma.checkInSlot.count({ where: { active: true } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { onboardingDismissedAt: true } }),
+      prisma.task.count({ where: { ownerId: userId, status: "CANCELADA" } }),
+    ])
+  );
 
-  const totalForRate = total - (await prisma.task.count({ where: { ownerId: userId, status: "CANCELADA" } }));
+  const totalForRate = total - cancelada;
   const taxaConclusao = totalForRate > 0 ? Math.round((concluida / totalForRate) * 100) : 0;
 
   const onboardingSteps: OnboardingStep[] = [
     { label: "Responda seu primeiro check-in", done: checkinsRespondidos > 0, href: "/checkin" },
     { label: "Crie sua primeira meta", done: metasTotal > 0, href: "/metas/nova" },
-    ...(session!.user.role === "ADMIN"
+    ...(session.user.role === "ADMIN"
       ? [{ label: "Configure os horários de check-in", done: activeSlots > 0, href: "/admin" }]
       : []),
   ];
@@ -85,7 +96,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Olá, {session!.user.name?.split(" ")[0]}</h1>
+          <h1 className="text-2xl font-bold mb-1">Olá, {session.user.name?.split(" ")[0]}</h1>
           <p style={{ color: "var(--color-text-secondary)" }}>Aqui está o seu resumo de hoje.</p>
         </div>
         {checkinsPendentes > 0 && (

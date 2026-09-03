@@ -1,12 +1,25 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Send, AlertTriangle, Lock, RefreshCw } from "lucide-react";
+import { auth } from "@/auth";
+import { getActiveBaseId } from "@/lib/active-base";
+import { runWithBase } from "@/lib/base-context";
 import { getEntregaSemanalSummary } from "@/lib/services/frentes";
 import { isAzureDevOpsConfigured } from "@/lib/services/azure-devops";
 import { AzureSyncButton } from "@/components/entrega-semanal/azure-sync-button";
 
+// Server Component renderizado como filho de outra página (não recebe
+// baseId por prop) — resolve a base ativa por conta própria em vez de
+// depender do contexto do componente pai ter se propagado até aqui.
 export async function EntregaSemanalSummaryPanel() {
-  const summary = await getEntregaSemanalSummary();
-  const azureEnv = isAzureDevOpsConfigured();
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const baseId = await getActiveBaseId(session.user);
+  if (!baseId) redirect("/selecionar-base");
+
+  const [summary, azureEnv] = await runWithBase(baseId, () =>
+    Promise.all([getEntregaSemanalSummary(), isAzureDevOpsConfigured()])
+  );
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">

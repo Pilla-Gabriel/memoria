@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getQuestionsFor, isActionableAnswer } from "@/lib/services/checkin";
 import { z } from "zod";
+import { withBase } from "@/lib/with-base";
 
 const submitSchema = z.object({
   answers: z.array(z.object({ questionId: z.string(), text: z.string().min(1) })),
 });
 
-export async function GET(request: Request, ctx: { params: Promise<{ sessionId: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase<{ params: Promise<{ sessionId: string }> }>(async (_request, ctx, session) => {
   const { sessionId } = await ctx.params;
   const checkInSession = await prisma.checkInSession.findUnique({
     where: { id: sessionId },
@@ -25,12 +22,9 @@ export async function GET(request: Request, ctx: { params: Promise<{ sessionId: 
   const questions = await getQuestionsFor(checkInSession.kind);
 
   return NextResponse.json({ session: checkInSession, questions });
-}
+});
 
-export async function POST(request: Request, ctx: { params: Promise<{ sessionId: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase<{ params: Promise<{ sessionId: string }> }>(async (request, ctx, session) => {
   const { sessionId } = await ctx.params;
   const checkInSession = await prisma.checkInSession.findUnique({ where: { id: sessionId } });
 
@@ -70,4 +64,4 @@ export async function POST(request: Request, ctx: { params: Promise<{ sessionId:
   });
 
   return NextResponse.json({ answers: createdAnswers });
-}
+});

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds, isManager } from "@/lib/rbac";
+import { withBase } from "@/lib/with-base";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user || !isManager(session.user.role)) {
+export const GET = withBase(async (_request, _ctx, session) => {
+  if (!isManager(session.user.role)) {
     return NextResponse.json({ error: "Acesso restrito a líderes e administradores" }, { status: 403 });
   }
 
@@ -19,4 +18,4 @@ export async function GET() {
   });
 
   return NextResponse.json({ logs });
-}
+});

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { goalProgressUpdateSchema } from "@/lib/validation";
 import { evaluateGoalStatus } from "@/lib/services/risk-engine";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
 
 async function recomputeCurrentValue(goalId: string, excludeId?: string) {
   const latest = await prisma.goalProgress.findFirst({
@@ -13,13 +13,7 @@ async function recomputeCurrentValue(goalId: string, excludeId?: string) {
   return latest?.value ?? 0;
 }
 
-export async function PATCH(
-  request: Request,
-  ctx: { params: Promise<{ id: string; progressId: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const PATCH = withBase<{ params: Promise<{ id: string; progressId: string }> }>(async (request, ctx, session) => {
   const { id, progressId } = await ctx.params;
   const goal = await prisma.goal.findUnique({ where: { id } });
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
@@ -61,15 +55,9 @@ export async function PATCH(
   });
 
   return NextResponse.json({ goal: updated });
-}
+});
 
-export async function DELETE(
-  request: Request,
-  ctx: { params: Promise<{ id: string; progressId: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const DELETE = withBase<{ params: Promise<{ id: string; progressId: string }> }>(async (_request, ctx, session) => {
   const { id, progressId } = await ctx.params;
   const goal = await prisma.goal.findUnique({ where: { id } });
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
@@ -102,4 +90,4 @@ export async function DELETE(
   });
 
   return NextResponse.json({ goal: updated });
-}
+});

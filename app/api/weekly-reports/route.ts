@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
 
 function startOfDay(date: Date) {
   const d = new Date(date);
@@ -23,10 +23,7 @@ const createSchema = z.object({
   kind: z.enum(["SEGUNDA", "SEXTA"]),
 });
 
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase(async (request, _ctx, session) => {
   const { searchParams } = new URL(request.url);
   const scope = searchParams.get("scope") ?? "mine";
   const visibleIds = await getVisibleUserIds(session.user);
@@ -41,12 +38,9 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json({ reports });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase(async (request, _ctx, session, baseId) => {
   const body = await request.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
@@ -59,10 +53,10 @@ export async function POST(request: Request) {
   if (existing) return NextResponse.json({ report: existing });
 
   const report = await prisma.weeklyReport.create({
-    data: { createdById: session.user.id, kind: parsed.data.kind, weekStart },
+    data: { createdById: session.user.id, kind: parsed.data.kind, weekStart, baseId },
   });
 
   await logAudit({ entityType: "WeeklyReport", entityId: report.id, action: "CRIADO", userId: session.user.id });
 
   return NextResponse.json({ report });
-}
+});

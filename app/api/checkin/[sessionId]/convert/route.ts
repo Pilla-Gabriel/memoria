@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
+import { getScopedCheckInSession } from "@/lib/base-guards";
 
 const convertSchema = z.object({
   answerId: z.string(),
@@ -13,10 +14,7 @@ const convertSchema = z.object({
   category: z.string().optional().nullable(),
 });
 
-export async function POST(request: Request, ctx: { params: Promise<{ sessionId: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase<{ params: Promise<{ sessionId: string }> }>(async (request, ctx, session, baseId) => {
   const { sessionId } = await ctx.params;
   const body = await request.json();
   const parsed = convertSchema.safeParse(body);
@@ -24,12 +22,18 @@ export async function POST(request: Request, ctx: { params: Promise<{ sessionId:
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
 
+  // Valida a sessão (pai) escopada pela base ativa ANTES de tocar na
+  // resposta — CheckInAnswer não tem baseId próprio.
+  const checkInSession = await getScopedCheckInSession(sessionId);
+  if (!checkInSession || checkInSession.userId !== session.user.id) {
+    return NextResponse.json({ error: "Sessão não encontrada" }, { status: 404 });
+  }
+
   const answer = await prisma.checkInAnswer.findUnique({
     where: { id: parsed.data.answerId },
-    include: { session: true },
   });
 
-  if (!answer || answer.session.id !== sessionId || answer.session.userId !== session.user.id) {
+  if (!answer || answer.sessionId !== checkInSession.id) {
     return NextResponse.json({ error: "Resposta não encontrada" }, { status: 404 });
   }
   if (answer.convertedTaskId) {
@@ -43,9 +47,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ sessionId:
       dueDate: new Date(parsed.data.dueDate),
       priority: parsed.data.priority,
       category: parsed.data.category ?? null,
-      origin: answer.session.kind === "DAILY" ? "CHECKIN" : "REVISAO_SEMANAL",
+      origin: checkInSession.kind === "DAILY" ? "CHECKIN" : "REVISAO_SEMANAL",
       ownerId: session.user.id,
       createdById: session.user.id,
+      baseId,
     },
   });
 
@@ -62,4 +67,4 @@ export async function POST(request: Request, ctx: { params: Promise<{ sessionId:
   });
 
   return NextResponse.json({ task });
-}
+});

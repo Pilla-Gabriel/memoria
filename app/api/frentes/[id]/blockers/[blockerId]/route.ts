@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
+import { getScopedFrente } from "@/lib/base-guards";
 
 const schema = z.object({ status: z.enum(["ABERTO", "RESOLVIDO"]) });
 
-export async function PATCH(request: Request, ctx: { params: Promise<{ id: string; blockerId: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const PATCH = withBase<{ params: Promise<{ id: string; blockerId: string }> }>(async (request, ctx, session) => {
   const { id, blockerId } = await ctx.params;
+
+  // Valida o pai (Frente) escopado pela base ativa ANTES de tocar no
+  // bloqueio — Blocker não tem baseId próprio, e comparar
+  // `blocker.frenteId !== id` não é validação (os dois vêm da própria URL).
+  const frente = await getScopedFrente(id);
+  if (!frente) return NextResponse.json({ error: "Frente não encontrada" }, { status: 404 });
+
   const blocker = await prisma.blocker.findUnique({ where: { id: blockerId } });
-  if (!blocker || blocker.frenteId !== id) {
+  if (!blocker || blocker.frenteId !== frente.id) {
     return NextResponse.json({ error: "Bloqueio não encontrado" }, { status: 404 });
   }
 
@@ -36,4 +41,4 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   });
 
   return NextResponse.json({ blocker: updated });
-}
+});

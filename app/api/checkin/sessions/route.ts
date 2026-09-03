@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { withBase } from "@/lib/with-base";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase(async (_request, _ctx, session) => {
   const sessions = await prisma.checkInSession.findMany({
     where: { userId: session.user.id },
     include: { slot: true, answers: true },
@@ -14,4 +11,4 @@ export async function GET() {
   });
 
   return NextResponse.json({ sessions });
-}
+});

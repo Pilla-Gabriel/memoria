@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { extensionRequestSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
+import { requireBaseId } from "@/lib/base-context";
 
 async function notifyApprover(task: { id: string; title: string; ownerId: string }) {
   const owner = await prisma.user.findUnique({ where: { id: task.ownerId }, select: { leaderId: true } });
@@ -18,14 +19,12 @@ async function notifyApprover(task: { id: string; title: string; ownerId: string
       relatedType: "Task",
       relatedId: task.id,
       message: `A tarefa "${task.title}" tem uma prorrogação aguardando sua aprovação.`,
+      baseId: requireBaseId(),
     },
   });
 }
 
-export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
@@ -77,4 +76,4 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   });
 
   return NextResponse.json({ extension, autoApproved: withinLimit });
-}
+});

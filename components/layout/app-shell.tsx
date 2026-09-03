@@ -5,17 +5,23 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import type { NavItem } from "@/lib/navigation";
 
+type AccessibleBase = { id: string; slug: string; name: string; color: string };
+
 export function AppShell({
   navItems,
   name,
   role,
   unreadCount,
+  activeBase,
+  accessibleBases,
   children,
 }: {
   navItems: NavItem[];
   name: string;
   role: string;
   unreadCount: number;
+  activeBase: AccessibleBase;
+  accessibleBases: AccessibleBase[];
   children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -28,6 +34,8 @@ export function AppShell({
           name={name}
           role={role}
           unreadCount={unreadCount}
+          activeBase={activeBase}
+          accessibleBases={accessibleBases}
           onMenuClick={() => setMobileOpen(true)}
         />
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] w-full mx-auto">{children}</main>

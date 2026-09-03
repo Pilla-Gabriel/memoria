@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isManager } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
+import { getScopedTask } from "@/lib/base-guards";
 
 const schema = z.object({ decision: z.enum(["APROVADA", "REJEITADA"]) });
 
-export async function PATCH(request: Request, ctx: { params: Promise<{ id: string; extId: string }> }) {
-  const session = await auth();
-  if (!session?.user || !isManager(session.user.role)) {
+export const PATCH = withBase<{ params: Promise<{ id: string; extId: string }> }>(async (request, ctx, session) => {
+  if (!isManager(session.user.role)) {
     return NextResponse.json({ error: "Apenas líderes ou administradores podem aprovar prorrogações" }, { status: 403 });
   }
 
   const { id, extId } = await ctx.params;
+
+  // Valida o pai (Task) escopado pela base ativa ANTES de tocar na
+  // prorrogação — TaskExtensionRequest não tem baseId próprio, então
+  // validar depois de já ter escrito não protegeria nada.
+  const task = await getScopedTask(id);
+  if (!task) return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
+
   const extension = await prisma.taskExtensionRequest.findUnique({ where: { id: extId } });
-  if (!extension || extension.taskId !== id || extension.status !== "PENDENTE_APROVACAO") {
+  if (!extension || extension.taskId !== task.id || extension.status !== "PENDENTE_APROVACAO") {
     return NextResponse.json({ error: "Solicitação não encontrada" }, { status: 404 });
   }
 
@@ -29,7 +36,6 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   });
 
   if (parsed.data.decision === "APROVADA") {
-    const task = await prisma.task.findUniqueOrThrow({ where: { id } });
     await prisma.task.update({
       where: { id },
       data: {
@@ -48,4 +54,4 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   });
 
   return NextResponse.json({ extension: updated });
-}
+});

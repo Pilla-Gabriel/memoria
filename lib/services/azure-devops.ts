@@ -1,11 +1,28 @@
 import { buildSprintGroups, buildHoursBySprint, buildHoursByPbi, buildHoursByAssignee, type WorkItemLite } from "@/lib/azure-work-items";
+import { getCurrentBaseId } from "@/lib/base-context";
+import { prisma } from "@/lib/prisma";
 
-const ORG = process.env.AZURE_DEVOPS_ORG;
-const DEFAULT_PROJECT = process.env.AZURE_DEVOPS_PROJECT;
+// O PAT é uma única credencial global (env), compartilhada por todas as
+// bases — elas vivem na mesma organização do Azure DevOps (onclickbr), só o
+// projeto muda. Org/projeto vêm da base ativa, com as variáveis de ambiente
+// como fallback só para uma base que não tenha os seus próprios definidos.
 const PAT = process.env.AZURE_DEVOPS_PAT;
 
-export function isAzureDevOpsConfigured() {
-  return Boolean(ORG && DEFAULT_PROJECT && PAT);
+type AzureConfig = { org: string; project: string };
+
+async function activeAzureConfig(): Promise<AzureConfig | null> {
+  const baseId = getCurrentBaseId();
+  const base = baseId ? await prisma.base.findUnique({ where: { id: baseId } }) : null;
+
+  const org = base?.azureOrg || process.env.AZURE_DEVOPS_ORG;
+  const project = base?.azureProject || process.env.AZURE_DEVOPS_PROJECT;
+  if (!org || !project) return null;
+  return { org, project };
+}
+
+export async function isAzureDevOpsConfigured(): Promise<boolean> {
+  if (!PAT) return false;
+  return (await activeAzureConfig()) !== null;
 }
 
 function escapeWiql(value: string) {
@@ -17,10 +34,10 @@ function authHeader() {
   return `Basic ${token}`;
 }
 
-async function azureFetch(path: string, init?: RequestInit) {
+async function azureFetch(org: string, path: string, init?: RequestInit) {
   let res: Response;
   try {
-    res = await fetch(`https://dev.azure.com/${ORG}${path}`, {
+    res = await fetch(`https://dev.azure.com/${org}${path}`, {
       ...init,
       headers: {
         ...(init?.headers ?? {}),
@@ -56,20 +73,21 @@ async function azureFetch(path: string, init?: RequestInit) {
 
 type AzureState = { name: string; category: string };
 
-async function getCompletedStates(project: string, workItemType: string): Promise<string[]> {
+async function getCompletedStates(org: string, project: string, workItemType: string): Promise<string[]> {
   const data = await azureFetch(
+    org,
     `/${encodeURIComponent(project)}/_apis/wit/workitemtypes/${encodeURIComponent(workItemType)}/states?api-version=7.1`
   );
   return (data.value as AzureState[]).filter((s) => s.category === "Completed").map((s) => s.name);
 }
 
-async function countByWiql(project: string, wiql: string): Promise<number> {
-  const ids = await idsByWiql(project, wiql);
+async function countByWiql(org: string, project: string, wiql: string): Promise<number> {
+  const ids = await idsByWiql(org, project, wiql);
   return ids.length;
 }
 
-async function idsByWiql(project: string, wiql: string): Promise<number[]> {
-  const data = await azureFetch(`/${encodeURIComponent(project)}/_apis/wit/wiql?api-version=7.1`, {
+async function idsByWiql(org: string, project: string, wiql: string): Promise<number[]> {
+  const data = await azureFetch(org, `/${encodeURIComponent(project)}/_apis/wit/wiql?api-version=7.1`, {
     method: "POST",
     body: JSON.stringify({ query: wiql }),
   });
@@ -79,7 +97,8 @@ async function idsByWiql(project: string, wiql: string): Promise<number[]> {
 // Este projeto (Nord) não usa os campos padrão do Scrum
 // (Microsoft.VSTS.Scheduling.CompletedWork/OriginalEstimate) — ele tem
 // campos customizados próprios para isso, confirmados consultando a task
-// 98477 (que tinha 4h em "Horas efetivas" registradas).
+// 98477 (que tinha 4h em "Horas efetivas" registradas). Confirmado com o
+// PAT real que o mesmo campo existe e está preenchido nos 5 projetos.
 const HOURS_ACTUAL_FIELD = "Custom.Horasefetivas";
 const HOURS_ESTIMATED_FIELD = "Custom.Horasestimadas";
 
@@ -112,7 +131,7 @@ function estimatedHours(item: AzureWorkItem) {
   return item.fields[HOURS_ESTIMATED_FIELD as "Custom.Horasestimadas"] ?? 0;
 }
 
-async function getWorkItemsBatch(project: string, ids: number[]): Promise<AzureWorkItem[]> {
+async function getWorkItemsBatch(org: string, project: string, ids: number[]): Promise<AzureWorkItem[]> {
   const fields = [
     "System.Title",
     "System.WorkItemType",
@@ -128,6 +147,7 @@ async function getWorkItemsBatch(project: string, ids: number[]): Promise<AzureW
   for (let i = 0; i < ids.length; i += 200) {
     const chunk = ids.slice(i, i + 200);
     const data = await azureFetch(
+      org,
       `/${encodeURIComponent(project)}/_apis/wit/workitems?ids=${chunk.join(",")}&fields=${fields}&api-version=7.1`
     );
     items.push(...(data.value ?? []));
@@ -142,9 +162,9 @@ function shortIterationLabel(iterationPath: string | undefined, project: string)
 }
 
 /**
- * Consulta todos os work items de um projeto do Azure DevOps e agrupa
- * hierarquicamente por Sprint > Type (PBI antes de Task) > State, com o
- * total de itens, a soma de Horas realizadas ("Horas efetivas") e Horas
+ * Consulta todos os work items do projeto do Azure DevOps da base ativa e
+ * agrupa hierarquicamente por Sprint > Type (PBI antes de Task) > State, com
+ * o total de itens, a soma de Horas realizadas ("Horas efetivas") e Horas
  * estimadas ("Horas estimadas") em cada nível. Esses são campos
  * customizados do processo do projeto (não os padrões do Scrum do Azure
  * DevOps) — confirmados via a task 98477. Também calcula horas por Sprint e
@@ -158,15 +178,17 @@ function shortIterationLabel(iterationPath: string | undefined, project: string)
  * sem precisar de uma nova requisição a cada mudança de filtro.
  */
 export async function getWorkItemBreakdown(projectOverride?: string) {
-  if (!isAzureDevOpsConfigured()) {
-    throw new Error("Integração com Azure DevOps não configurada (variáveis de ambiente ausentes).");
+  const config = await activeAzureConfig();
+  if (!config || !PAT) {
+    throw new Error("Integração com Azure DevOps não configurada para a base ativa (nem nas variáveis de ambiente).");
   }
 
-  const project = projectOverride || DEFAULT_PROJECT!;
+  const { org } = config;
+  const project = projectOverride || config.project;
   const escapedProject = escapeWiql(project);
 
-  const ids = await idsByWiql(project, `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${escapedProject}'`);
-  const rawItems = ids.length > 0 ? await getWorkItemsBatch(project, ids) : [];
+  const ids = await idsByWiql(org, project, `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${escapedProject}'`);
+  const rawItems = ids.length > 0 ? await getWorkItemsBatch(org, project, ids) : [];
 
   const items: WorkItemLite[] = rawItems.map((item) => ({
     id: item.id,
@@ -206,17 +228,19 @@ export async function getWorkItemBreakdown(projectOverride?: string) {
 }
 
 /**
- * Calcula % de conclusão para uma lista de tipos de work item (CSV) em um
- * projeto do Azure DevOps: total de itens vs. itens em um estado da
- * categoria "Completed" (detectado dinamicamente por tipo, já que os nomes
- * de estado variam por template de processo).
+ * Calcula % de conclusão para uma lista de tipos de work item (CSV) no
+ * projeto do Azure DevOps da base ativa: total de itens vs. itens em um
+ * estado da categoria "Completed" (detectado dinamicamente por tipo, já que
+ * os nomes de estado variam por template de processo).
  */
 export async function syncBacklogCompletion(workItemTypesCsv: string, projectOverride?: string) {
-  if (!isAzureDevOpsConfigured()) {
-    throw new Error("Integração com Azure DevOps não configurada (variáveis de ambiente ausentes).");
+  const config = await activeAzureConfig();
+  if (!config || !PAT) {
+    throw new Error("Integração com Azure DevOps não configurada para a base ativa (nem nas variáveis de ambiente).");
   }
 
-  const project = projectOverride || DEFAULT_PROJECT!;
+  const { org } = config;
+  const project = projectOverride || config.project;
   const types = workItemTypesCsv
     .split(",")
     .map((t) => t.trim())
@@ -234,15 +258,17 @@ export async function syncBacklogCompletion(workItemTypesCsv: string, projectOve
     const escapedType = escapeWiql(type);
 
     const typeTotal = await countByWiql(
+      org,
       project,
       `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${escapedProject}' AND [System.WorkItemType] = '${escapedType}'`
     );
     total += typeTotal;
 
-    const completedStates = await getCompletedStates(project, type);
+    const completedStates = await getCompletedStates(org, project, type);
     if (completedStates.length > 0) {
       const stateList = completedStates.map((s) => `'${escapeWiql(s)}'`).join(",");
       const typeDone = await countByWiql(
+        org,
         project,
         `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = '${escapedProject}' AND [System.WorkItemType] = '${escapedType}' AND [System.State] IN (${stateList})`
       );

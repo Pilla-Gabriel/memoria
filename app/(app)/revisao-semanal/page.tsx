@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveBaseId } from "@/lib/active-base";
+import { runWithBase } from "@/lib/base-context";
 import { CalendarCheck, CheckCircle2 } from "lucide-react";
 
 const KIND_LABEL: Record<string, string> = {
@@ -10,14 +13,20 @@ const KIND_LABEL: Record<string, string> = {
 
 export default async function RevisaoSemanalPage() {
   const session = await auth();
-  const userId = session!.user.id;
+  if (!session?.user) redirect("/login");
+  const userId = session.user.id;
 
-  const sessions = await prisma.checkInSession.findMany({
-    where: { userId, kind: { in: ["MONDAY_REVIEW", "FRIDAY_REVIEW"] } },
-    include: { answers: true },
-    orderBy: { date: "desc" },
-    take: 20,
-  });
+  const baseId = await getActiveBaseId(session.user);
+  if (!baseId) redirect("/selecionar-base");
+
+  const sessions = await runWithBase(baseId, () =>
+    prisma.checkInSession.findMany({
+      where: { userId, kind: { in: ["MONDAY_REVIEW", "FRIDAY_REVIEW"] } },
+      include: { answers: true },
+      orderBy: { date: "desc" },
+      take: 20,
+    })
+  );
 
   const pending = sessions.filter((s) => s.status === "PENDENTE");
   const history = sessions.filter((s) => s.status !== "PENDENTE");

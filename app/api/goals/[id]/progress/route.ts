@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { goalProgressSchema } from "@/lib/validation";
 import { evaluateGoalStatus } from "@/lib/services/risk-engine";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
 
-export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const goal = await prisma.goal.findUnique({ where: { id } });
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
@@ -54,4 +51,4 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   return NextResponse.json({ goal: updated });
-}
+});
