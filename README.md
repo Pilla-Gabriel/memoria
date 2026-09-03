@@ -63,8 +63,18 @@ dashboard e não muda de URL.
    npm run start              # roda em http://localhost:3000
    ```
    Para sobreviver a reinicializações/logout no Windows, registre esse
-   processo como serviço (ex: com o [NSSM](https://nssm.cc/)), apontando para
-   `npm run start` com o diretório de trabalho na pasta do projeto.
+   processo como serviço com o [NSSM](https://nssm.cc/download):
+   ```
+   nssm install MemoriaApp
+   ```
+   Na janela que abre, preencha:
+   - **Path**: caminho completo do `npm.cmd` (ache com `where npm` no prompt)
+   - **Startup directory**: a pasta do projeto (onde está o `package.json`)
+   - **Arguments**: `run start`
+
+   Confirme com `nssm start MemoriaApp` e verifique com `sc query MemoriaApp`
+   (estado `RUNNING`), do mesmo jeito que foi feito para o serviço
+   `Cloudflared`.
 
 2. **Crie o túnel nomeado no dashboard da Cloudflare** (Zero Trust → Networks
    → Tunnels → Create a tunnel) e instale-o como serviço na máquina com o
