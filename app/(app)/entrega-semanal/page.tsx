@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getActiveBaseId } from "@/lib/active-base";
+import { runWithBase } from "@/lib/base-context";
 import { isManager } from "@/lib/rbac";
 import { computeFrenteComparison, getWindowStartFor } from "@/lib/services/frentes";
 import { RiskBadge, SourceLabel, ReportStatusBadge } from "@/components/entrega-semanal/badges";
@@ -25,35 +28,43 @@ const KIND_LABEL: Record<string, string> = { SEGUNDA: "Segunda-feira", SEXTA: "S
 
 export default async function EntregaSemanalPage() {
   const session = await auth();
-  const user = session!.user;
+  if (!session?.user) redirect("/login");
+  const user = session.user;
   const manager = isManager(user.role);
 
-  const frentes = await prisma.frente.findMany({
-    where: { active: true },
-    include: { owner: { select: { name: true } }, _count: { select: { blockers: { where: { status: "ABERTO" } } } } },
-    orderBy: { createdAt: "asc" },
+  const baseId = await getActiveBaseId(user);
+  if (!baseId) redirect("/selecionar-base");
+
+  const { frentes, comparisons, myReports, frenteAlerts } = await runWithBase(baseId, async () => {
+    const frentes = await prisma.frente.findMany({
+      where: { active: true },
+      include: { owner: { select: { name: true } }, _count: { select: { blockers: { where: { status: "ABERTO" } } } } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const weekStart = mondayOfWeek(new Date());
+    const windowStart = await getWindowStartFor(user.id, weekStart);
+    const comparisons = await Promise.all(frentes.map((f) => computeFrenteComparison(f.id, windowStart)));
+
+    const [myReports, frenteAlerts] = await Promise.all([
+      prisma.weeklyReport.findMany({
+        where: { createdById: user.id },
+        orderBy: { weekStart: "desc" },
+        take: 6,
+      }),
+      prisma.alert.findMany({
+        where: {
+          userId: user.id,
+          read: false,
+          type: { in: ["FRENTE_EM_RISCO", "FRENTE_SEM_ATUALIZACAO", "BLOQUEIO_ABERTO"] },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
+
+    return { frentes, comparisons, myReports, frenteAlerts };
   });
-
-  const weekStart = mondayOfWeek(new Date());
-  const windowStart = await getWindowStartFor(user.id, weekStart);
-  const comparisons = await Promise.all(frentes.map((f) => computeFrenteComparison(f.id, windowStart)));
-
-  const [myReports, frenteAlerts] = await Promise.all([
-    prisma.weeklyReport.findMany({
-      where: { createdById: user.id },
-      orderBy: { weekStart: "desc" },
-      take: 6,
-    }),
-    prisma.alert.findMany({
-      where: {
-        userId: user.id,
-        read: false,
-        type: { in: ["FRENTE_EM_RISCO", "FRENTE_SEM_ATUALIZACAO", "BLOQUEIO_ABERTO"] },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-  ]);
 
   const pendingReport = myReports.find((r) => r.status === "RASCUNHO");
 

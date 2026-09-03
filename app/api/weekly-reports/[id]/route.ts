@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { weeklyReportUpdateSchema } from "@/lib/validation";
 import { buildWeeklyReportData } from "@/lib/services/weekly-report";
 import { threeLineSummary } from "@/lib/services/frentes";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
 
 async function assertVisible(createdById: string, sessionUser: { id: string; role: string }) {
   const visible = await getVisibleUserIds(sessionUser);
   return !visible || visible.includes(createdById);
 }
 
-export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
   const { id } = await ctx.params;
   const { report, windowStart, comparisons } = await buildWeeklyReportData(id);
 
@@ -26,12 +23,9 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   const frentes = comparisons.map((c) => ({ ...c, summary: threeLineSummary(c) }));
 
   return NextResponse.json({ report, windowStart, frentes });
-}
+});
 
-export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const existing = await prisma.weeklyReport.findUnique({ where: { id } });
   if (!existing || !(await assertVisible(existing.createdById, session.user))) {
@@ -57,4 +51,4 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   });
 
   return NextResponse.json({ report });
-}
+});

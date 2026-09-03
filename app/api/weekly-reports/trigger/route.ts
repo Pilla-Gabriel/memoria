@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { ensureWeeklyReportDrafts } from "@/lib/services/weekly-report";
+import { withBase } from "@/lib/with-base";
 
-export async function POST() {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+export const POST = withBase(async (_request, _ctx, session) => {
+  if (session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Apenas administradores podem disparar manualmente" }, { status: 403 });
   }
 
@@ -13,4 +12,4 @@ export async function POST() {
   const created = await ensureWeeklyReportDrafts(kind);
 
   return NextResponse.json({ created, kind });
-}
+});

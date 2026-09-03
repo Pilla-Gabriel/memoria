@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { taskUpdateSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { formatTaskCode } from "@/lib/services/task-code";
+import { withBase } from "@/lib/with-base";
 
 async function assertVisible(userId: string, sessionUser: { id: string; role: string }) {
   const visible = await getVisibleUserIds(sessionUser);
   return !visible || visible.includes(userId);
 }
 
-export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
   const { id } = await ctx.params;
   const task = await prisma.task.findUnique({
     where: { id },
@@ -47,12 +44,9 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   const displayCode = task.code ? formatTaskCode(task.code.id) : null;
 
   return NextResponse.json({ task: { ...task, displayCode }, auditLog });
-}
+});
 
-export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const existing = await prisma.task.findUnique({ where: { id } });
   if (!existing || !(await assertVisible(existing.ownerId, session.user))) {
@@ -93,12 +87,9 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   }
 
   return NextResponse.json({ task });
-}
+});
 
-export async function DELETE(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const DELETE = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
   const { id } = await ctx.params;
   const existing = await prisma.task.findUnique({ where: { id } });
   if (!existing || !(await assertVisible(existing.ownerId, session.user))) {
@@ -116,4 +107,4 @@ export async function DELETE(request: Request, ctx: { params: Promise<{ id: stri
   ]);
 
   return NextResponse.json({ ok: true });
-}
+});

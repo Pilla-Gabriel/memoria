@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { taskCreateSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { formatTaskCode } from "@/lib/services/task-code";
+import { withBase } from "@/lib/with-base";
 
 function parseMulti(value: string | null): string[] | undefined {
   if (!value) return undefined;
@@ -12,10 +12,7 @@ function parseMulti(value: string | null): string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase(async (request, _ctx, session) => {
   const { searchParams } = new URL(request.url);
   const status = parseMulti(searchParams.get("status"));
   const priority = parseMulti(searchParams.get("priority"));
@@ -44,12 +41,9 @@ export async function GET(request: Request) {
   const withCode = tasks.map((t) => ({ ...t, displayCode: t.code ? formatTaskCode(t.code.id) : null }));
 
   return NextResponse.json({ tasks: withCode });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase(async (request, _ctx, session, baseId) => {
   const body = await request.json();
   const parsed = taskCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -77,6 +71,7 @@ export async function POST(request: Request) {
       origin: data.origin,
       ownerId,
       createdById: session.user.id,
+      baseId,
     },
   });
 
@@ -85,4 +80,4 @@ export async function POST(request: Request) {
   await logAudit({ entityType: "Task", entityId: task.id, action: "CRIADA", userId: session.user.id });
 
   return NextResponse.json({ task: { ...task, displayCode: formatTaskCode(code.id) } });
-}
+});

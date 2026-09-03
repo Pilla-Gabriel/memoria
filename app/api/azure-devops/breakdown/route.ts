@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getWorkItemBreakdown, isAzureDevOpsConfigured } from "@/lib/services/azure-devops";
+import { withBase } from "@/lib/with-base";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
-  if (!isAzureDevOpsConfigured()) {
+export const GET = withBase(async () => {
+  if (!(await isAzureDevOpsConfigured())) {
     return NextResponse.json({ error: "Integração com Azure DevOps não configurada." }, { status: 400 });
   }
 
@@ -19,4 +16,4 @@ export async function GET() {
       { status: 502 }
     );
   }
-}
+});

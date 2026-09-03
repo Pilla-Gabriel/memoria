@@ -116,6 +116,41 @@ enum WeeklyReportStatus {
   PUBLICADO
 }
 
+// ---------- Bases (multi-tenant: cada base tem seus próprios dados e,
+// opcionalmente, seu próprio projeto do Azure DevOps) ----------
+
+model Base {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  color        String
+  azureOrg     String?
+  azureProject String?
+  createdAt    DateTime @default(now())
+
+  userBases       UserBase[]
+  tasks           Task[]
+  goals           Goal[]
+  frentes         Frente[]
+  checkInSessions CheckInSession[]
+  alerts          Alert[]
+  weeklyReports   WeeklyReport[]
+  auditLogs       AuditLog[]
+}
+
+// Quais bases cada usuário pode acessar. ADMIN enxerga todas as bases
+// implicitamente (ver lib/base-context.ts) e não precisa de registro aqui;
+// LEADER/USER só acessam as bases explicitamente concedidas.
+model UserBase {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
+  @@unique([userId, baseId])
+}
+
 // ---------- Core ----------
 
 model User {
@@ -151,6 +186,7 @@ model User {
   createdBlockers      Blocker[]         @relation("BlockerCreatedBy")
   assignedBlockers     Blocker[]         @relation("BlockerOwner")
   weeklyReports        WeeklyReport[]
+  userBases            UserBase[]
 }
 
 // ---------- Check-in engine ----------
@@ -186,12 +222,16 @@ model CheckInSession {
   slotId String?
   slot   CheckInSlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   createdAt  DateTime  @default(now())
   answeredAt DateTime?
 
   answers CheckInAnswer[]
 
   @@index([userId, date])
+  @@index([baseId])
 }
 
 model CheckInAnswer {
@@ -231,6 +271,9 @@ model Task {
   createdById String
   createdBy   User   @relation("TaskCreatedBy", fields: [createdById], references: [id])
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   comments          TaskComment[]
   attachments       TaskAttachment[]
   extensionRequests TaskExtensionRequest[]
@@ -240,6 +283,7 @@ model Task {
 
   @@index([ownerId, status])
   @@index([dueDate])
+  @@index([baseId])
 }
 
 // Fonte de numeração sequencial para o código de exibição da tarefa
@@ -320,9 +364,13 @@ model Goal {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   progress GoalProgress[]
 
   @@index([ownerId, status])
+  @@index([baseId])
 }
 
 model GoalProgress {
@@ -350,7 +398,11 @@ model Alert {
   snoozedUntil DateTime?
   createdAt    DateTime  @default(now())
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   @@index([userId, read])
+  @@index([baseId])
 }
 
 model AuditLog {
@@ -365,7 +417,11 @@ model AuditLog {
   user       User     @relation(fields: [userId], references: [id])
   createdAt  DateTime @default(now())
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   @@index([entityType, entityId])
+  @@index([baseId])
 }
 
 // ---------- Entrega Semanal (frentes, entregas, bloqueios, relatório) ----------
@@ -390,11 +446,15 @@ model Frente {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   snapshots  FrenteSnapshot[]
   deliveries Delivery[]
   blockers   Blocker[]
 
   @@index([active])
+  @@index([baseId])
 }
 
 model FrenteSnapshot {
@@ -461,5 +521,9 @@ model WeeklyReport {
   createdAt   DateTime  @default(now())
   publishedAt DateTime?
 
+  baseId String
+  base   Base   @relation(fields: [baseId], references: [id])
+
   @@index([createdById, weekStart])
+  @@index([baseId])
 }

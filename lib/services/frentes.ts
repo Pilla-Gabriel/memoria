@@ -120,7 +120,7 @@ export function threeLineSummary(comparison: Awaited<ReturnType<typeof computeFr
  * fora do ciclo automático, não a única forma de manter os números em dia.
  */
 export async function syncAllAzureFrentes(actorUserId: string) {
-  if (!isAzureDevOpsConfigured()) {
+  if (!(await isAzureDevOpsConfigured())) {
     throw new Error("Integração com Azure DevOps não configurada.");
   }
 

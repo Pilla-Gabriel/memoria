@@ -2,11 +2,28 @@ import { createServer } from "http";
 import next from "next";
 import { schedule } from "node-cron";
 import { prisma } from "@/lib/prisma";
+import { runWithBase, runUnscoped } from "@/lib/base-context";
 import { ensureSessionsForSlot, ensureWeeklyReviewSessions } from "@/lib/services/checkin";
 import { runDailyAlertsJob } from "@/lib/services/alerts";
 import { ensureWeeklyReportDrafts } from "@/lib/services/weekly-report";
 import { syncAllAzureFrentes } from "@/lib/services/frentes";
 import { isAzureDevOpsConfigured } from "@/lib/services/azure-devops";
+
+// Todo job agendado roda uma vez por base, cada um dentro de runWithBase —
+// sem isso, getCurrentBaseId() responde undefined dentro do job e a
+// extensão do Prisma trata a operação como sem base (fail-closed): nada
+// seria criado/alterado em base nenhuma. O erro de uma base não interrompe
+// as demais.
+async function forEachBase(jobName: string, fn: (base: { id: string; slug: string }) => Promise<unknown>) {
+  const bases = await runUnscoped(() => prisma.base.findMany({ select: { id: true, slug: true } }));
+  for (const base of bases) {
+    try {
+      await runWithBase(base.id, () => fn(base));
+    } catch (err) {
+      console.error(`[cron] erro em "${jobName}" na base ${base.slug}:`, err);
+    }
+  }
+}
 
 const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
@@ -40,7 +57,7 @@ async function checkAndDispatchSlots() {
 // de auditoria — usamos o admin ativo mais antigo como responsável "de
 // sistema" pelas sincronizações em segundo plano.
 async function runScheduledAzureSync() {
-  if (!isAzureDevOpsConfigured()) return;
+  if (!(await isAzureDevOpsConfigured())) return;
 
   const systemActor = await prisma.user.findFirst({
     where: { role: "ADMIN", active: true },
@@ -72,47 +89,53 @@ app.prepare().then(() => {
 
   // Verifica a cada minuto, de segunda a sexta, se algum horário de check-in bate com o horário atual.
   schedule("* * * * 1-5", () => {
-    checkAndDispatchSlots().catch((err) => console.error("[cron] erro ao disparar check-ins:", err));
+    forEachBase("checkAndDispatchSlots", checkAndDispatchSlots).catch((err) =>
+      console.error("[cron] erro ao disparar check-ins:", err)
+    );
   });
 
   // Revisão semanal de segunda-feira às 08:30.
   schedule("30 8 * * 1", () => {
-    ensureWeeklyReviewSessions("MONDAY_REVIEW").catch((err) =>
-      console.error("[cron] erro ao criar revisão de segunda:", err)
+    forEachBase("ensureWeeklyReviewSessions(MONDAY_REVIEW)", () => ensureWeeklyReviewSessions("MONDAY_REVIEW")).catch(
+      (err) => console.error("[cron] erro ao criar revisão de segunda:", err)
     );
   });
 
   // Revisão semanal de sexta-feira às 08:30.
   schedule("30 8 * * 5", () => {
-    ensureWeeklyReviewSessions("FRIDAY_REVIEW").catch((err) =>
-      console.error("[cron] erro ao criar revisão de sexta:", err)
+    forEachBase("ensureWeeklyReviewSessions(FRIDAY_REVIEW)", () => ensureWeeklyReviewSessions("FRIDAY_REVIEW")).catch(
+      (err) => console.error("[cron] erro ao criar revisão de sexta:", err)
     );
   });
 
   // Rascunho do relatório de Entrega Semanal — segunda-feira às 08:00.
   schedule("0 8 * * 1", () => {
-    ensureWeeklyReportDrafts("SEGUNDA").catch((err) =>
+    forEachBase("ensureWeeklyReportDrafts(SEGUNDA)", () => ensureWeeklyReportDrafts("SEGUNDA")).catch((err) =>
       console.error("[cron] erro ao criar relatório de segunda:", err)
     );
   });
 
   // Rascunho do relatório de Entrega Semanal — sexta-feira às 08:00.
   schedule("0 8 * * 5", () => {
-    ensureWeeklyReportDrafts("SEXTA").catch((err) =>
+    forEachBase("ensureWeeklyReportDrafts(SEXTA)", () => ensureWeeklyReportDrafts("SEXTA")).catch((err) =>
       console.error("[cron] erro ao criar relatório de sexta:", err)
     );
   });
 
   // Recalcula prazos, atrasos e risco de metas todos os dias às 00:05.
   schedule("5 0 * * *", () => {
-    runDailyAlertsJob().catch((err) => console.error("[cron] erro ao gerar alertas diários:", err));
+    forEachBase("runDailyAlertsJob", runDailyAlertsJob).catch((err) =>
+      console.error("[cron] erro ao gerar alertas diários:", err)
+    );
   });
 
   // Sincroniza frentes ligadas ao Azure DevOps a cada 2 horas, em horário
   // comercial (seg-sex, 8h-18h) — o botão manual continua existindo como
   // atalho para forçar uma sincronização fora desse ciclo.
   schedule("0 8-18/2 * * 1-5", () => {
-    runScheduledAzureSync().catch((err) => console.error("[cron] erro ao sincronizar Azure DevOps:", err));
+    forEachBase("runScheduledAzureSync", runScheduledAzureSync).catch((err) =>
+      console.error("[cron] erro ao sincronizar Azure DevOps:", err)
+    );
   });
 
   console.log("> Agendador de check-ins e alertas ativo.");

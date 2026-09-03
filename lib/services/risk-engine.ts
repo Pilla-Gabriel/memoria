@@ -2,6 +2,12 @@ import { prisma } from "@/lib/prisma";
 
 export type RiskLevel = "BAIXO" | "MEDIO" | "ALTO" | "CRITICO";
 
+// Compartilhado com lib/services/alerts.ts: depois desse número de dias sem
+// prazo, uma tarefa passa a contar como atraso no risco do usuário, do mesmo
+// jeito que uma tarefa vencida — sem isso ela ficava invisível para
+// computeUserRiskProfile só por nunca ter recebido um prazo.
+export const NO_DUE_DATE_GRACE_DAYS = 3;
+
 export function daysBetween(a: Date, b: Date) {
   const ms = a.getTime() - b.getTime();
   return Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -17,7 +23,7 @@ export function classifyRisk(countDelays: number, avgDelayDays: number, maxActiv
 export async function computeUserRiskProfile(userId: string) {
   const now = new Date();
 
-  const [lateActive, completedLate] = await Promise.all([
+  const [lateActive, completedLate, staleNoDueDate] = await Promise.all([
     prisma.task.findMany({
       where: { ownerId: userId, status: "ATRASADA", dueDate: { not: null } },
       select: { dueDate: true },
@@ -31,22 +37,40 @@ export async function computeUserRiskProfile(userId: string) {
       },
       select: { dueDate: true, completedAt: true },
     }),
+    prisma.task.findMany({
+      where: {
+        ownerId: userId,
+        status: { notIn: ["CONCLUIDA", "CANCELADA"] },
+        needsDueDate: true,
+        dueDate: null,
+      },
+      select: { createdAt: true },
+    }),
   ]);
 
   const completedLateFiltered = completedLate.filter(
     (t) => t.completedAt && t.dueDate && t.completedAt > t.dueDate
   );
 
+  // Tarefa sem prazo além do período de carência conta como atraso: "dias de
+  // atraso" aqui é o tempo além da carência, não o tempo total sem prazo.
+  const staleNoDueDateFiltered = staleNoDueDate
+    .map((t) => daysBetween(now, t.createdAt) - NO_DUE_DATE_GRACE_DAYS)
+    .filter((days) => days > 0);
+
   const delayDays: number[] = [
     ...lateActive.map((t) => daysBetween(now, t.dueDate as Date)),
     ...completedLateFiltered.map((t) => daysBetween(t.completedAt as Date, t.dueDate as Date)),
+    ...staleNoDueDateFiltered,
   ];
 
-  const countDelays = lateActive.length + completedLateFiltered.length;
+  const countDelays = lateActive.length + completedLateFiltered.length + staleNoDueDateFiltered.length;
   const avgDelayDays = delayDays.length ? delayDays.reduce((a, b) => a + b, 0) / delayDays.length : 0;
-  const maxActiveDelayDays = lateActive.length
-    ? Math.max(...lateActive.map((t) => daysBetween(now, t.dueDate as Date)))
-    : 0;
+  const activeDelayDays = [
+    ...lateActive.map((t) => daysBetween(now, t.dueDate as Date)),
+    ...staleNoDueDateFiltered,
+  ];
+  const maxActiveDelayDays = activeDelayDays.length ? Math.max(...activeDelayDays) : 0;
 
   return {
     countDelays,

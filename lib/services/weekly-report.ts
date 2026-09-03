@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { computeFrenteComparison, getWindowStartFor } from "@/lib/services/frentes";
+import { requireBaseId } from "@/lib/base-context";
+import { getActiveUserIdsWithBaseAccess } from "@/lib/base-access";
 
 function startOfDay(date: Date) {
   const d = new Date(date);
@@ -21,8 +23,10 @@ function mondayOfWeek(date: Date) {
  */
 export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: Date = new Date()) {
   const weekStart = mondayOfWeek(date);
+  const baseId = requireBaseId();
+  const accessibleUserIds = await getActiveUserIdsWithBaseAccess(baseId);
   const reporters = await prisma.user.findMany({
-    where: { active: true, role: { in: ["LEADER", "ADMIN"] } },
+    where: { id: { in: accessibleUserIds }, role: { in: ["LEADER", "ADMIN"] } },
     select: { id: true },
   });
 
@@ -34,7 +38,7 @@ export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: 
     if (existing) continue;
 
     const report = await prisma.weeklyReport.create({
-      data: { createdById: reporter.id, kind, weekStart },
+      data: { createdById: reporter.id, kind, weekStart, baseId },
     });
 
     await prisma.alert.create({
@@ -47,6 +51,7 @@ export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: 
           kind === "SEGUNDA"
             ? "O relatório de Entrega Semanal de segunda-feira está pronto para ser preenchido."
             : "O relatório de Entrega Semanal de sexta-feira está pronto para ser preenchido.",
+        baseId,
       },
     });
 

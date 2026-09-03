@@ -31,7 +31,27 @@ const FRIDAY_QUESTIONS = [
   "Existe alguma atividade que precisa ser replanejada?",
 ];
 
+// Mesmo org (onclickbr) para as 5 bases, projetos diferentes — conforme
+// especificado pelo usuário. Cores fixas para identidade visual estável.
+const BASES = [
+  { slug: "nord", name: "NORD", color: "#06a9f4", azureOrg: "onclickbr", azureProject: "Nord" },
+  { slug: "kpl", name: "KPL", color: "#8b5cf6", azureOrg: "onclickbr", azureProject: "KPL" },
+  { slug: "apiecomm", name: "APIECOMM", color: "#22c55e", azureOrg: "onclickbr", azureProject: "APIECOMM" },
+  { slug: "produtos", name: "Produtos", color: "#f59e0b", azureOrg: "onclickbr", azureProject: "Onclick - Produtos" },
+  { slug: "implantacao", name: "Implantação", color: "#ec4899", azureOrg: "onclickbr", azureProject: "Implantação" },
+];
+
 async function main() {
+  const bases: Record<string, { id: string }> = {};
+  for (const b of BASES) {
+    bases[b.slug] = await prisma.base.upsert({
+      where: { slug: b.slug },
+      update: {},
+      create: b,
+    });
+  }
+  const nord = bases.nord;
+
   const existingSlots = await prisma.checkInSlot.count();
   if (existingSlots === 0) {
     await prisma.checkInSlot.createMany({
@@ -90,7 +110,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const usuario = await prisma.user.upsert({
     where: { email: "usuario@memoria.app" },
     update: {},
     create: {
@@ -101,6 +121,17 @@ async function main() {
       leaderId: leader.id,
     },
   });
+
+  // ADMIN enxerga todas as bases implicitamente (lib/base-context.ts) e não
+  // precisa de UserBase. Líder e usuário de demonstração começam só com
+  // acesso à NORD, que é onde os dados de demonstração já existentes vivem.
+  for (const userId of [leader.id, usuario.id]) {
+    await prisma.userBase.upsert({
+      where: { userId_baseId: { userId, baseId: nord.id } },
+      update: {},
+      create: { userId, baseId: nord.id },
+    });
+  }
 
   const existingFrentes = await prisma.frente.count();
   if (existingFrentes === 0) {
@@ -120,6 +151,7 @@ async function main() {
           sourceDetail: "https://dev.azure.com/onclickbr/Nord/",
           azureWorkItemTypes: "Product Backlog Item,Bug",
           ownerId: admin.id,
+          baseId: nord.id,
         },
         {
           name: "Acompanhamento e validação dos clientes",
@@ -133,6 +165,7 @@ async function main() {
           source: "TEAMS",
           sourceDetail: "Canal de acompanhamento de clientes no Teams",
           ownerId: admin.id,
+          baseId: nord.id,
         },
         {
           name: "Migração KPL para NORD",
@@ -146,6 +179,7 @@ async function main() {
           source: "AZURE_DEVOPS",
           sourceDetail: "https://dev.azure.com/onclickbr/Nord/",
           ownerId: admin.id,
+          baseId: nord.id,
         },
       ],
     });

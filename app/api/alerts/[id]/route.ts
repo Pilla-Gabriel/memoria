@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { withBase } from "@/lib/with-base";
 
 const schema = z.object({ read: z.boolean().optional(), snooze: z.boolean().optional() });
 
-export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const alert = await prisma.alert.findUnique({ where: { id } });
   if (!alert || alert.userId !== session.user.id) {
@@ -29,4 +26,4 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
 
   const updated = await prisma.alert.update({ where: { id }, data });
   return NextResponse.json({ alert: updated });
-}
+});

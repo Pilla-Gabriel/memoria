@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { daysBetween, evaluateGoalStatus } from "@/lib/services/risk-engine";
+import { daysBetween, evaluateGoalStatus, NO_DUE_DATE_GRACE_DAYS } from "@/lib/services/risk-engine";
 import { evaluateFrenteRisk } from "@/lib/services/frentes";
+import { markStaleSessionsAsIgnored } from "@/lib/services/checkin";
 import { logAudit } from "@/lib/audit";
+import { requireBaseId } from "@/lib/base-context";
 
 const FRENTE_STALE_DAYS = 5;
+const AUTO_DUE_DATE_WINDOW_DAYS = 3;
 
 function startOfDay(date: Date) {
   const d = new Date(date);
@@ -42,7 +45,7 @@ async function createAlertOnce(params: {
   });
   if (existing) return;
 
-  await prisma.alert.create({ data: params });
+  await prisma.alert.create({ data: { ...params, baseId: requireBaseId() } });
 }
 
 export async function generateTaskAlerts() {
@@ -54,13 +57,39 @@ export async function generateTaskAlerts() {
   for (const task of tasks) {
     if (!task.dueDate) {
       if (task.needsDueDate) {
-        await createAlertOnce({
-          userId: task.ownerId,
-          type: "SEM_PRAZO",
-          relatedType: "Task",
-          relatedId: task.id,
-          message: `A tarefa "${task.title}" ainda não tem prazo definido.`,
-        });
+        const daysSinceCreated = daysBetween(now, task.createdAt);
+
+        if (daysSinceCreated >= NO_DUE_DATE_GRACE_DAYS) {
+          const autoDueDate = new Date(now.getTime() + AUTO_DUE_DATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+          await prisma.task.update({
+            where: { id: task.id },
+            data: { dueDate: autoDueDate, needsDueDate: false },
+          });
+          await logAudit({
+            entityType: "Task",
+            entityId: task.id,
+            action: "PRAZO_ATRIBUIDO_AUTOMATICO",
+            field: "dueDate",
+            oldValue: null,
+            newValue: autoDueDate.toISOString(),
+            userId: task.ownerId,
+          });
+          await createAlertOnce({
+            userId: task.ownerId,
+            type: "SEM_PRAZO",
+            relatedType: "Task",
+            relatedId: task.id,
+            message: `A tarefa "${task.title}" ficou ${NO_DUE_DATE_GRACE_DAYS} dias sem prazo — um prazo de ${AUTO_DUE_DATE_WINDOW_DAYS} dias foi definido automaticamente.`,
+          });
+        } else {
+          await createAlertOnce({
+            userId: task.ownerId,
+            type: "SEM_PRAZO",
+            relatedType: "Task",
+            relatedId: task.id,
+            message: `A tarefa "${task.title}" ainda não tem prazo definido.`,
+          });
+        }
       }
       continue;
     }
@@ -197,6 +226,7 @@ export async function generateFrenteAlerts() {
 }
 
 export async function runDailyAlertsJob() {
+  await markStaleSessionsAsIgnored();
   await generateTaskAlerts();
   await generateGoalAlerts();
   await generateFrenteAlerts();

@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { goalCreateSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
+import { withBase } from "@/lib/with-base";
 
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase(async (request, _ctx, session) => {
   const { searchParams } = new URL(request.url);
   const scope = searchParams.get("scope") ?? "mine";
   const visibleIds = await getVisibleUserIds(session.user);
@@ -22,12 +19,9 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json({ goals });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const POST = withBase(async (request, _ctx, session, baseId) => {
   const body = await request.json();
   const parsed = goalCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -60,10 +54,11 @@ export async function POST(request: Request) {
       dueDate: new Date(data.dueDate),
       successCriteria: data.successCriteria,
       ownerId,
+      baseId,
     },
   });
 
   await logAudit({ entityType: "Goal", entityId: goal.id, action: "CRIADA", userId: session.user.id });
 
   return NextResponse.json({ goal });
-}
+});

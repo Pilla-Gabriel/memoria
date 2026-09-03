@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { buildWeeklyReportData } from "@/lib/services/weekly-report";
 import { generateWeeklyReportPdf } from "@/lib/services/weekly-report-pdf";
+import { withBase } from "@/lib/with-base";
 
-export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-
+export const GET = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
   const { id } = await ctx.params;
   const data = await buildWeeklyReportData(id);
 
@@ -24,4 +21,4 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
       "Content-Disposition": `inline; filename="entrega-semanal-${id}.pdf"`,
     },
   });
-}
+});
