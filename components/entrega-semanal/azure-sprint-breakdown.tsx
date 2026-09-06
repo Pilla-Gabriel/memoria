@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ExternalLink, Layers } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { StateCategoryBadge } from "@/components/entrega-semanal/badges";
+import { CHART_COLORS, chartAxisTick, chartGridStroke, chartTooltipStyle, chartLegendStyle } from "@/components/charts/chart-theme";
 import { buildUserGroups, buildHoursByPbi, roundHours, type WorkItemLite } from "@/lib/azure-work-items";
 
 type Breakdown = {
@@ -230,6 +232,22 @@ export function AzureSprintBreakdown() {
   const userGroups = useMemo(() => buildUserGroups(filteredItems), [filteredItems]);
   const hoursByPbi = useMemo(() => buildHoursByPbi(filteredItems), [filteredItems]);
 
+  // Top 10 por volume de item — mesmo corte usado no gráfico "Horas por
+  // responsável" do Executivo: com mais que isso o eixo de categorias fica
+  // ilegível (Recharts pula a maioria dos rótulos pra não sobrepor texto).
+  const chartUserGroups = userGroups.slice(0, 10);
+  const truncateName = (name: string) => (name.length > 20 ? `${name.slice(0, 20)}…` : name);
+  const effortVsRealizadoData = chartUserGroups.map((g) => ({
+    name: truncateName(g.assignee),
+    effort: g.effort,
+    realizada: g.hours,
+  }));
+  const estimadaVsRealizadaData = chartUserGroups.map((g) => ({
+    name: truncateName(g.assignee),
+    estimada: g.estimatedHours,
+    realizada: g.hours,
+  }));
+
   const totalHours = filteredItems.reduce((acc, i) => acc + i.hours, 0);
   const totalEstimatedHours = filteredItems.reduce((acc, i) => acc + i.estimatedHours, 0);
   const totalEffort = filteredItems.reduce((acc, i) => acc + (i.effort ?? 0), 0);
@@ -379,6 +397,51 @@ export function AzureSprintBreakdown() {
           <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
             Este processo não registra Horas realizadas por item.
           </p>
+        )}
+
+        {chartUserGroups.length > 0 && (
+          <div className="grid gap-5 lg:grid-cols-2 mb-6">
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Effort x Horas realizadas por usuário</h3>
+              <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                Unidades diferentes (Effort é uma estimativa em pontos, Horas é tempo registrado) — compare a
+                proporção entre pessoas, não o valor absoluto de uma barra contra a outra.
+              </p>
+              <div style={{ width: "100%", height: 240 }}>
+                <ResponsiveContainer>
+                  <BarChart data={effortVsRealizadoData} layout="vertical" margin={{ left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis type="number" allowDecimals={false} tick={chartAxisTick} />
+                    <YAxis type="category" dataKey="name" tick={{ ...chartAxisTick, fontSize: 10 }} width={120} />
+                    <Tooltip {...chartTooltipStyle} />
+                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Bar dataKey="effort" name="Effort" fill={CHART_COLORS.danger} radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="realizada" name="Horas realizadas" fill={CHART_COLORS.primary} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Horas estimadas x realizadas por usuário</h3>
+              <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                No escopo do filtro atual (sprint/usuário selecionados).
+              </p>
+              <div style={{ width: "100%", height: 240 }}>
+                <ResponsiveContainer>
+                  <BarChart data={estimadaVsRealizadaData} layout="vertical" margin={{ left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis type="number" allowDecimals={false} tick={chartAxisTick} />
+                    <YAxis type="category" dataKey="name" tick={{ ...chartAxisTick, fontSize: 10 }} width={120} />
+                    <Tooltip {...chartTooltipStyle} />
+                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Bar dataKey="estimada" name="Estimada" fill={CHART_COLORS.warning} radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="realizada" name="Realizada" fill={CHART_COLORS.primary} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
         )}
 
         {userGroups.length === 0 ? (
