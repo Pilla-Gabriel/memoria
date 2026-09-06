@@ -21,11 +21,20 @@ function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    let result;
+    try {
+      result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+    } catch {
+      setLoading(false);
+      setError(
+        "Não foi possível conectar ao servidor de autenticação. Se você está acessando por um endereço diferente de localhost, confirme se esse host está liberado (variável DEV_ALLOWED_ORIGINS)."
+      );
+      return;
+    }
 
     setLoading(false);
 
