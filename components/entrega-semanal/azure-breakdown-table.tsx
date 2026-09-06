@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Layers } from "lucide-react";
+import Link from "next/link";
+import { Layers, ArrowRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { AzureSyncButton } from "@/components/entrega-semanal/azure-sync-button";
 import { CHART_COLORS, chartAxisTick, chartGridStroke, chartTooltipStyle, chartLegendStyle } from "@/components/charts/chart-theme";
-import {
-  buildSprintGroups,
-  buildHoursBySprint,
-  buildHoursByPbi,
-  buildHoursByAssignee,
-  type WorkItemLite,
-} from "@/lib/azure-work-items";
+import { buildSprintGroups, buildHoursBySprint, buildHoursByAssignee, roundHours, type WorkItemLite } from "@/lib/azure-work-items";
 
 type SyncSummary = {
   azureEnv: boolean;
@@ -26,11 +21,9 @@ type Breakdown = {
   totalHours: number;
   totalEstimatedHours: number;
   anyHoursTracked: boolean;
-  anyEstimatedHoursTracked: boolean;
+  currentSprintLabel: string | null;
   items: WorkItemLite[];
 };
-
-const ALL = "__all__";
 
 function SyncStatus({ syncSummary }: { syncSummary: SyncSummary }) {
   if (!syncSummary.azureEnv) {
@@ -50,14 +43,15 @@ function SyncStatus({ syncSummary }: { syncSummary: SyncSummary }) {
   );
 }
 
+// Esta é a versão resumida (KPIs + tendência) pensada pro Dashboard
+// executivo — o detalhamento operacional por sprint/usuário/item vive em
+// AzureSprintBreakdown, na aba "Azure DevOps" de Entrega Semanal.
 const BREAKDOWN_POLL_MS = 90_000;
 
 export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary }) {
   const [data, setData] = useState<Breakdown | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sprintFilter, setSprintFilter] = useState(ALL);
-  const [assigneeFilter, setAssigneeFilter] = useState(ALL);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,75 +85,10 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
     };
   }, []);
 
-  const allItems = data?.items ?? [];
-  const sprintOptions = useMemo(
-    () => Array.from(new Set(allItems.map((i) => i.sprint))).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true })),
-    [allItems]
-  );
-  const assigneeOptions = useMemo(
-    () => Array.from(new Set(allItems.map((i) => i.assignee))).sort((a, b) => a.localeCompare(b, "pt-BR")),
-    [allItems]
-  );
-
-  const filteredItems = useMemo(
-    () =>
-      allItems.filter(
-        (i) => (sprintFilter === ALL || i.sprint === sprintFilter) && (assigneeFilter === ALL || i.assignee === assigneeFilter)
-      ),
-    [allItems, sprintFilter, assigneeFilter]
-  );
-
-  const sprints = useMemo(() => buildSprintGroups(filteredItems), [filteredItems]);
+  const items = useMemo(() => data?.items ?? [], [data]);
+  const sprints = useMemo(() => buildSprintGroups(items), [items]);
   const hoursBySprint = useMemo(() => buildHoursBySprint(sprints), [sprints]);
-  const hoursByPbi = useMemo(() => buildHoursByPbi(filteredItems), [filteredItems]);
-  const hoursByAssignee = useMemo(() => buildHoursByAssignee(filteredItems), [filteredItems]);
-  const filteredTotalHours = sprints.reduce((acc, s) => acc + s.hours, 0);
-  const filteredTotalEstimatedHours = sprints.reduce((acc, s) => acc + s.estimatedHours, 0);
-  const isFiltered = sprintFilter !== ALL || assigneeFilter !== ALL;
-
-  const filterBar = sprintOptions.length > 0 && (
-    <div className="flex flex-wrap items-center gap-2 mb-4">
-      <select
-        value={sprintFilter}
-        onChange={(e) => setSprintFilter(e.target.value)}
-        className="text-xs rounded-lg border px-2.5 py-1.5"
-        style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
-      >
-        <option value={ALL}>Todas as sprints</option>
-        {sprintOptions.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
-      </select>
-      <select
-        value={assigneeFilter}
-        onChange={(e) => setAssigneeFilter(e.target.value)}
-        className="text-xs rounded-lg border px-2.5 py-1.5"
-        style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
-      >
-        <option value={ALL}>Todos os responsáveis</option>
-        {assigneeOptions.map((a) => (
-          <option key={a} value={a}>
-            {a}
-          </option>
-        ))}
-      </select>
-      {isFiltered && (
-        <button
-          type="button"
-          onClick={() => {
-            setSprintFilter(ALL);
-            setAssigneeFilter(ALL);
-          }}
-          className="text-xs font-semibold"
-          style={{ color: "var(--color-primary)" }}
-        >
-          Limpar filtros
-        </button>
-      )}
-    </div>
-  );
+  const hoursByAssignee = useMemo(() => buildHoursByAssignee(items), [items]);
 
   const header = (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
@@ -223,116 +152,34 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
   }));
 
   return (
-    <div className="space-y-5">
-      <div className="card p-5">
-        {header}
-        {filterBar}
-        {sprints.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Nenhum work item corresponde aos filtros selecionados.
-          </p>
-        ) : (
-        <>
-        <p className="text-xs mb-4 mt-2" style={{ color: "var(--color-text-secondary)" }}>
-          {filteredItems.length} work item(s) · {filteredTotalHours}h realizadas · {filteredTotalEstimatedHours}h
-          estimadas{isFiltered ? " (no filtro atual)" : " no total"}
-          {!data.anyHoursTracked && " — este processo não registra Horas realizadas por item"}
-        </p>
+    <div className="card p-5">
+      {header}
 
-        <div className="space-y-5">
-          {sprints.map((sprint) => (
-            <div key={sprint.sprint}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold">{sprint.sprint}</h3>
-                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                  {sprint.count} item(s)
-                </span>
-              </div>
-              <div className="space-y-3 pl-3 border-l-2" style={{ borderColor: "var(--color-border)" }}>
-                {sprint.types.map((type) => (
-                  <div key={type.type}>
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: "var(--color-primary-dark)" }}>
-                      {type.type} · {type.count} item(s)
-                    </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left border-b" style={{ borderColor: "var(--color-border)" }}>
-                            <th className="py-1.5 pr-4 font-medium" style={{ color: "var(--color-text-secondary)" }}>
-                              State
-                            </th>
-                            <th className="py-1.5 font-medium text-right" style={{ color: "var(--color-text-secondary)" }}>
-                              Total de itens
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {type.states.map((s) => (
-                            <tr key={s.state} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                              <td className="py-1.5 pr-4">{s.state}</td>
-                              <td className="py-1.5 text-right">{s.count}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        </>
-        )}
-      </div>
-
-      <div className="card p-5">
-        <h2 className="font-semibold mb-1">Horas por PBI</h2>
-        <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
-          Soma das Horas estimadas e realizadas das Tasks vinculadas a cada PBI (via System.Parent).
-        </p>
-        {hoursByPbi.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Nenhuma Task vinculada a um PBI foi encontrada.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b" style={{ borderColor: "var(--color-border)" }}>
-                  <th className="py-1.5 pr-4 font-medium" style={{ color: "var(--color-text-secondary)" }}>
-                    PBI
-                  </th>
-                  <th className="py-1.5 pr-4 font-medium text-right" style={{ color: "var(--color-text-secondary)" }}>
-                    Tasks
-                  </th>
-                  <th className="py-1.5 pr-4 font-medium text-right" style={{ color: "var(--color-text-secondary)" }}>
-                    Horas estimadas
-                  </th>
-                  <th className="py-1.5 font-medium text-right" style={{ color: "var(--color-text-secondary)" }}>
-                    Horas realizadas
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {hoursByPbi.map((p) => (
-                  <tr key={p.pbiId} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                    <td className="py-1.5 pr-4">{p.pbiTitle}</td>
-                    <td className="py-1.5 pr-4 text-right">{p.taskCount}</td>
-                    <td className="py-1.5 pr-4 text-right">{p.estimatedHours ? `${p.estimatedHours}h` : "—"}</td>
-                    <td className="py-1.5 text-right">{p.hours ? `${p.hours}h` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+        {[
+          { label: "Sprint atual", value: data.currentSprintLabel ?? "—" },
+          { label: "Itens (total)", value: data.totalItems },
+          { label: "Horas estimadas", value: data.totalEstimatedHours ? `${roundHours(data.totalEstimatedHours)}h` : "—" },
+          { label: "Horas realizadas", value: data.totalHours ? `${roundHours(data.totalHours)}h` : "—" },
+        ].map((kpi) => (
+          <div key={kpi.label} className="rounded-xl p-3" style={{ background: "var(--color-bg)" }}>
+            <p className="text-lg font-bold">{kpi.value}</p>
+            <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              {kpi.label}
+            </p>
           </div>
-        )}
+        ))}
       </div>
+      {!data.anyHoursTracked && (
+        <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
+          Este processo não registra Horas realizadas por item.
+        </p>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="font-semibold mb-4">Horas por Sprint (Estimada x Realizada)</h2>
-          <div style={{ width: "100%", height: 240 }}>
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Horas por Sprint (Estimada x Realizada)</h3>
+          <div style={{ width: "100%", height: 220 }}>
             <ResponsiveContainer>
               <BarChart data={sprintChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
@@ -347,14 +194,14 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
           </div>
         </div>
 
-        <div className="card p-5">
-          <h2 className="font-semibold mb-4">Horas por responsável (Estimada x Realizada)</h2>
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Horas por responsável (Estimada x Realizada)</h3>
           {assigneeChartData.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
               Nenhum work item com responsável atribuído foi encontrado.
             </p>
           ) : (
-            <div style={{ width: "100%", height: 240 }}>
+            <div style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
                 <BarChart data={assigneeChartData} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
@@ -370,6 +217,14 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
           )}
         </div>
       </div>
+
+      <Link
+        href="/entrega-semanal?aba=azure-devops"
+        className="text-sm font-semibold flex items-center gap-1 mt-5"
+        style={{ color: "var(--color-primary)" }}
+      >
+        Ver detalhamento por sprint e usuário <ArrowRight size={14} />
+      </Link>
     </div>
   );
 }
