@@ -306,6 +306,15 @@ export async function getWorkItemBreakdown(projectOverride?: string) {
   const totalEstimatedHours = roundHours(sprints.reduce((acc, s) => acc + s.estimatedHours, 0));
   const anyHoursTracked = rawItems.some((i) => typeof i.fields["Custom.Horasefetivas"] === "number");
   const anyEstimatedHoursTracked = rawItems.some((i) => typeof i.fields["Custom.Horasestimadas"] === "number");
+  // Cada organização usa um subconjunto diferente destes 5 campos (nenhum
+  // deles obrigatório) — sem isso, uma coluna inteira de "—" fica ambígua:
+  // ninguém preencheu ainda, ou este processo simplesmente não usa o campo?
+  // A UI usa essas flags pra avisar quando é o segundo caso.
+  const anyEffortTracked = rawItems.some((i) => typeof i.fields[EFFORT_FIELD as "Microsoft.VSTS.Scheduling.Effort"] === "number");
+  const anyTargetDateTracked = rawItems.some((i) => !!i.fields[TARGET_DATE_FIELD as "Microsoft.VSTS.Scheduling.TargetDate"]);
+  const anyDemandTypeTracked = rawItems.some((i) => !!i.fields[DEMAND_TYPE_FIELD as "Custom.Tipodedemanda"]);
+  const anyPlanningTracked = rawItems.some((i) => !!i.fields[PLANNING_FIELD as "Custom.Planejamento"]);
+  const anyActivityTracked = rawItems.some((i) => !!i.fields[ACTIVITY_FIELD as "Microsoft.VSTS.Common.Activity"]);
 
   return {
     project,
@@ -314,6 +323,11 @@ export async function getWorkItemBreakdown(projectOverride?: string) {
     totalEstimatedHours,
     anyHoursTracked,
     anyEstimatedHoursTracked,
+    anyEffortTracked,
+    anyTargetDateTracked,
+    anyDemandTypeTracked,
+    anyPlanningTracked,
+    anyActivityTracked,
     currentSprintLabel,
     items,
     sprints,

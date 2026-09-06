@@ -13,6 +13,11 @@ type Breakdown = {
   currentSprintLabel: string | null;
   anyHoursTracked: boolean;
   anyEstimatedHoursTracked: boolean;
+  anyEffortTracked: boolean;
+  anyTargetDateTracked: boolean;
+  anyDemandTypeTracked: boolean;
+  anyPlanningTracked: boolean;
+  anyActivityTracked: boolean;
   items: WorkItemLite[];
 };
 
@@ -64,7 +69,12 @@ function ItemsTable({ items }: { items: WorkItemLite[] }) {
         <thead>
           <tr className="text-left border-b" style={{ borderColor: "var(--color-border)" }}>
             {COLUMNS.map((c) => (
-              <th key={c.label} className="py-2 pr-4 font-medium truncate" style={{ color: "var(--color-text-secondary)" }}>
+              <th
+                key={c.label}
+                className="py-2 pr-4 font-medium truncate"
+                style={{ color: "var(--color-text-secondary)" }}
+                title={c.label}
+              >
                 {c.label}
               </th>
             ))}
@@ -252,6 +262,35 @@ export function AzureSprintBreakdown() {
   const totalEstimatedHours = filteredItems.reduce((acc, i) => acc + i.estimatedHours, 0);
   const totalEffort = filteredItems.reduce((acc, i) => acc + (i.effort ?? 0), 0);
 
+  // Cada organização usa um subconjunto diferente destes campos — sem isso,
+  // uma coluna inteira de "—" é ambígua (ninguém preencheu ainda vs. este
+  // processo não usa o campo). Computado sobre o projeto inteiro (via as
+  // flags do backend), não sobre o filtro atual, pra não acender/apagar
+  // sozinho conforme o usuário troca de sprint.
+  const untrackedFields = data
+    ? [
+        !data.anyEstimatedHoursTracked && "Horas estimadas",
+        !data.anyHoursTracked && "Horas realizadas",
+        !data.anyEffortTracked && "Effort",
+        !data.anyTargetDateTracked && "Data prevista",
+        !data.anyDemandTypeTracked && "Tipo de demanda",
+        !data.anyPlanningTracked && "Planejamento",
+        !data.anyActivityTracked && "Activity",
+      ].filter((f): f is string => Boolean(f))
+    : [];
+  const untrackedFieldsNote = untrackedFields.length > 0 ? untrackedFields.join(", ") : null;
+
+  // Sem sprint "atual" detectada, há dois cenários bem diferentes e o
+  // analista precisa saber qual é o dele:
+  // 1) o projeto realmente não tem sprints (tudo cai num "sprint" só,
+  //    geralmente com o nome do projeto) — o filtro de sprint não separa nada;
+  // 2) os itens TÊM sprint (dezenas delas, ex.: "Sprint 1".."Sprint 129" no
+  //    KPL), só não dá pra saber qual é a atual porque o time não tem as
+  //    Iterations configuradas em Project Settings → Team → Iterations no
+  //    Azure DevOps — selecionar manualmente resolve.
+  const noCurrentSprintDetected = !!data && !data.currentSprintLabel && sprintOptions.length > 0;
+  const noRealSprints = noCurrentSprintDetected && sprintOptions.length <= 1;
+
   const isFiltered = effectiveSprintFilter !== ALL || effectiveAssigneeFilter !== ALL;
 
   const header = (
@@ -271,11 +310,12 @@ export function AzureSprintBreakdown() {
         type="button"
         onClick={handleSync}
         disabled={syncing}
+        title="Busca os dados mais recentes do Azure DevOps para esta tela — não altera nada no Azure DevOps nem nas frentes de Entrega Semanal."
         className="text-xs font-semibold rounded-lg border px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-60"
         style={{ borderColor: "var(--color-border)" }}
       >
         <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
-        {syncing ? "Sincronizando..." : "Sincronizar agora"}
+        {syncing ? "Atualizando..." : "Atualizar dados"}
       </button>
     </div>
   );
@@ -377,12 +417,25 @@ export function AzureSprintBreakdown() {
           )}
         </div>
 
+        {noRealSprints && (
+          <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
+            Este projeto não tem sprints configuradas no Azure DevOps (Project Settings → Team → Iterations) — todos
+            os itens caem num único agrupamento, então o filtro de sprint não separa nada.
+          </p>
+        )}
+        {noCurrentSprintDetected && !noRealSprints && (
+          <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
+            Não foi possível detectar a sprint atual automaticamente (o time deste projeto não tem as Iterations
+            configuradas no Azure DevOps) — selecione a sprint certa manualmente no filtro acima.
+          </p>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
             { label: "Itens", value: filteredItems.length },
             { label: "Horas estimadas", value: formatHours(totalEstimatedHours) },
             { label: "Horas realizadas", value: formatHours(totalHours) },
-            { label: "Effort total", value: totalEffort ? roundHours(totalEffort) : "—" },
+            { label: "Effort total (pontos)", value: totalEffort ? roundHours(totalEffort) : "—" },
           ].map((kpi) => (
             <div key={kpi.label} className="rounded-xl p-3" style={{ background: "var(--color-bg)" }}>
               <p className="text-lg font-bold">{kpi.value}</p>
@@ -393,9 +446,10 @@ export function AzureSprintBreakdown() {
           ))}
         </div>
 
-        {!data.anyHoursTracked && (
+        {untrackedFieldsNote && (
           <p className="text-xs mb-4" style={{ color: "var(--color-text-secondary)" }}>
-            Este processo não registra Horas realizadas por item.
+            Este processo do Azure DevOps não preenche: {untrackedFieldsNote}. Um traço (—) nessas colunas significa
+            que o campo não é usado — não que o item não tenha estimativa.
           </p>
         )}
 

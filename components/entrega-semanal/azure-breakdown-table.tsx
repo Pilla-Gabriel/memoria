@@ -219,7 +219,7 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
       </div>
 
       <Link
-        href="/entrega-semanal?aba=azure-devops"
+        href="/azure-devops"
         className="text-sm font-semibold flex items-center gap-1 mt-5"
         style={{ color: "var(--color-primary)" }}
       >
