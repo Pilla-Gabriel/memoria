@@ -73,6 +73,31 @@ export function SourceLabel({
   );
 }
 
+const STATE_CATEGORY_STYLE: Record<string, { background: string; color: string }> = {
+  Completed: { background: "rgba(34,197,94,0.12)", color: "#166534" },
+  InProgress: { background: "rgba(6,169,244,0.12)", color: "#075985" },
+  Resolved: { background: "rgba(20,184,166,0.12)", color: "#115e59" },
+  Proposed: { background: "rgba(148,163,184,0.16)", color: "#334155" },
+  Removed: { background: "rgba(239,68,68,0.12)", color: "#991b1b" },
+  Other: { background: "rgba(148,163,184,0.16)", color: "#334155" },
+};
+
+// Cor por categoria do estado (Proposed/InProgress/Resolved/Completed/Removed),
+// vinda de /_apis/wit/workitemtypes/{tipo}/states — nunca do texto do estado
+// em si, já que o nome exibido (`state`) varia por tipo/processo mas a
+// categoria é estável.
+export function StateCategoryBadge({ state, stateCategory }: { state: string; stateCategory: string }) {
+  const style = STATE_CATEGORY_STYLE[stateCategory] ?? STATE_CATEGORY_STYLE.Other;
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={style}
+    >
+      {state}
+    </span>
+  );
+}
+
 export function ReportStatusBadge({ status }: { status: string }) {
   const published = status === "PUBLICADO";
   return (
