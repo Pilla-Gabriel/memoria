@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Plus, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { StatusBadge, PriorityBadge, NeedsDueDateBadge } from "@/components/tasks/badges";
@@ -60,6 +61,8 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 
 function TarefasList() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const canSeeTeam = session?.user?.role === "LEADER" || session?.user?.role === "ADMIN";
   const [tasks, setTasks] = useState<Task[]>([]);
   const [statuses, setStatuses] = useState<string[]>(() => {
     const s = searchParams.get("status");
@@ -178,28 +181,30 @@ function TarefasList() {
         >
           Sem prazo
         </button>
-        <div className="flex rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--color-border)" }}>
-          <button
-            onClick={() => setScope("mine")}
-            className="px-3 py-2.5 font-medium"
-            style={{
-              background: scope === "mine" ? "var(--color-primary)" : "transparent",
-              color: scope === "mine" ? "#fff" : "var(--color-text)",
-            }}
-          >
-            Minhas
-          </button>
-          <button
-            onClick={() => setScope("team")}
-            className="px-3 py-2.5 font-medium"
-            style={{
-              background: scope === "team" ? "var(--color-primary)" : "transparent",
-              color: scope === "team" ? "#fff" : "var(--color-text)",
-            }}
-          >
-            Equipe
-          </button>
-        </div>
+        {canSeeTeam && (
+          <div className="flex rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--color-border)" }}>
+            <button
+              onClick={() => setScope("mine")}
+              className="px-3 py-2.5 font-medium"
+              style={{
+                background: scope === "mine" ? "var(--color-primary)" : "transparent",
+                color: scope === "mine" ? "#fff" : "var(--color-text)",
+              }}
+            >
+              Minhas
+            </button>
+            <button
+              onClick={() => setScope("team")}
+              className="px-3 py-2.5 font-medium"
+              style={{
+                background: scope === "team" ? "var(--color-primary)" : "transparent",
+                color: scope === "team" ? "#fff" : "var(--color-text)",
+              }}
+            >
+              Equipe
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="card overflow-hidden">
