@@ -19,7 +19,7 @@ export const GET = withBase<{ params: Promise<{ sessionId: string }> }>(async (_
     return NextResponse.json({ error: "Sessão não encontrada" }, { status: 404 });
   }
 
-  const questions = await getQuestionsFor(checkInSession.kind);
+  const questions = await getQuestionsFor(checkInSession.userId, checkInSession.kind);
 
   return NextResponse.json({ session: checkInSession, questions });
 });

@@ -16,10 +16,13 @@ function createClient() {
 
 // As 7 entidades raiz que carregam baseId. Entidades filhas (Blocker,
 // TaskComment, TaskAttachment, TaskExtensionRequest, CheckInAnswer,
-// GoalProgress, FrenteSnapshot, Delivery, TaskCode) e as globais
-// (User, TaskCategory, CheckInQuestion, CheckInSlot, Base, UserBase) não
-// entram aqui de propósito — isolamento das filhas é feito validando o pai
-// escopado antes de qualquer operação (ver lib/base-guards.ts).
+// GoalProgress, FrenteSnapshot, Delivery, TaskCode) e as globais/por-usuário
+// (User, Base, UserBase, e TaskCategory/CheckInQuestion/CheckInSlot — estas
+// três não têm baseId, são compartilhadas entre bases; o isolamento delas é
+// por usuário via userId/overridesId, resolvido em
+// lib/services/personalization.ts, não por este extend do Prisma) não entram
+// aqui de propósito — isolamento das filhas é feito validando o pai escopado
+// antes de qualquer operação (ver lib/base-guards.ts).
 const SCOPED_MODELS = new Set([
   "Task",
   "Goal",

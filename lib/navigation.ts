@@ -15,7 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/azure-devops", label: "Azure DevOps", icon: "layers" },
   { href: "/alertas", label: "Alertas", icon: "bell" },
   { href: "/executivo", label: "Dashbord", icon: "bar-chart-3", roles: ["LEADER", "ADMIN"] },
-  { href: "/auditoria", label: "Auditoria", icon: "shield-check", roles: ["LEADER", "ADMIN"] },
+  { href: "/auditoria", label: "Auditoria", icon: "shield-check", roles: ["ADMIN"] },
   { href: "/admin", label: "Administração", icon: "settings-2", roles: ["ADMIN"] },
   { href: "/configuracoes", label: "Configurações", icon: "user-cog", roles: ["USER", "LEADER", "ADMIN"] },
 ];

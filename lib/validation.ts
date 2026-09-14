@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  name: z.string().min(2, "Informe seu nome completo"),
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter ao menos 6 caracteres"),
-  leaderId: z.string().optional().nullable(),
-});
-
 export const adminUserCreateSchema = z.object({
   name: z.string().min(2, "Informe o nome completo"),
   email: z.string().email("E-mail inválido"),

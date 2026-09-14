@@ -1,27 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { PlayCircle, Pencil, UserPlus } from "lucide-react";
+import { CheckInSlotsSection } from "@/components/settings/checkin-slots-section";
+import { CheckInQuestionsSection } from "@/components/settings/checkin-questions-section";
+import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
 
 type User = { id: string; name: string; email: string; role: string; active: boolean; leaderId: string | null };
-type Slot = { id: string; time: string; label: string; active: boolean };
-type Question = { id: string; text: string; category: string; active: boolean };
-type Category = { id: string; name: string; active: boolean };
 
 const TABS = ["Usuários", "Horários de check-in", "Perguntas", "Categorias de tarefas"] as const;
 
 export function AdminPageClient() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Usuários");
   const [users, setUsers] = useState<User[]>([]);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [newSlotTime, setNewSlotTime] = useState("");
-  const [newSlotLabel, setNewSlotLabel] = useState("");
-  const [newQuestionText, setNewQuestionText] = useState("");
-  const [newQuestionCategory, setNewQuestionCategory] = useState("DAILY");
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
 
   const [showNewUser, setShowNewUser] = useState(false);
@@ -40,16 +33,8 @@ export function AdminPageClient() {
   const [editUserError, setEditUserError] = useState<string | null>(null);
 
   async function loadAll() {
-    const [u, s, q, c] = await Promise.all([
-      fetch("/api/admin/users").then((r) => r.json()),
-      fetch("/api/admin/checkin-slots").then((r) => r.json()),
-      fetch("/api/admin/checkin-questions").then((r) => r.json()),
-      fetch("/api/admin/task-categories").then((r) => r.json()),
-    ]);
+    const u = await fetch("/api/admin/users").then((r) => r.json());
     setUsers(u.users ?? []);
-    setSlots(s.slots ?? []);
-    setQuestions(q.questions ?? []);
-    setCategories(c.categories ?? []);
   }
 
   useEffect(() => {
@@ -120,76 +105,6 @@ export function AdminPageClient() {
       return;
     }
     setEditingUserId(null);
-    loadAll();
-  }
-
-  async function addSlot(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newSlotTime || !newSlotLabel) return;
-    await fetch("/api/admin/checkin-slots", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ time: newSlotTime, label: newSlotLabel }),
-    });
-    setNewSlotTime("");
-    setNewSlotLabel("");
-    loadAll();
-  }
-
-  async function toggleSlot(id: string, active: boolean) {
-    await fetch(`/api/admin/checkin-slots/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    loadAll();
-  }
-
-  async function addQuestion(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newQuestionText) return;
-    await fetch("/api/admin/checkin-questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newQuestionText, category: newQuestionCategory }),
-    });
-    setNewQuestionText("");
-    loadAll();
-  }
-
-  async function toggleQuestion(id: string, active: boolean) {
-    await fetch(`/api/admin/checkin-questions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    loadAll();
-  }
-
-  async function addCategory(e: React.FormEvent) {
-    e.preventDefault();
-    setCategoryError(null);
-    if (!newCategoryName.trim()) return;
-    const res = await fetch("/api/admin/task-categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCategoryName.trim() }),
-    });
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setCategoryError(json.error ?? "Não foi possível criar a categoria.");
-      return;
-    }
-    setNewCategoryName("");
-    loadAll();
-  }
-
-  async function toggleCategory(id: string, active: boolean) {
-    await fetch(`/api/admin/task-categories/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
     loadAll();
   }
 
@@ -444,147 +359,33 @@ export function AdminPageClient() {
         </div>
       )}
 
-      {tab === "Horários de check-in" && (
-        <div className="space-y-4">
-          <form onSubmit={addSlot} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div>
-              <label className="block text-xs font-medium mb-1">Horário</label>
-              <input
-                type="time"
-                value={newSlotTime}
-                onChange={(e) => setNewSlotTime(e.target.value)}
-                className="rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <div className="flex-1 min-w-[160px]">
-              <label className="block text-xs font-medium mb-1">Rótulo</label>
-              <input
-                value={newSlotLabel}
-                onChange={(e) => setNewSlotLabel(e.target.value)}
-                placeholder="Ex.: Check-in da manhã"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {slots.map((s) => (
-              <div key={s.id} className="p-4 flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {s.time} — {s.label}
-                </span>
-                <button
-                  onClick={() => toggleSlot(s.id, s.active)}
-                  className="text-xs font-semibold"
-                  style={{ color: s.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {s.active ? "Ativo" : "Inativo"}
-                </button>
-              </div>
-            ))}
-          </div>
+      {tab === "Horários de check-in" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem seus próprios
+            horários (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <CheckInSlotsSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
 
-      {tab === "Perguntas" && (
-        <div className="space-y-4">
-          <form onSubmit={addQuestion} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-xs font-medium mb-1">Pergunta</label>
-              <input
-                value={newQuestionText}
-                onChange={(e) => setNewQuestionText(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">Categoria</label>
-              <select
-                value={newQuestionCategory}
-                onChange={(e) => setNewQuestionCategory(e.target.value)}
-                className="rounded-lg border px-3 py-2 text-sm bg-transparent"
-                style={{ borderColor: "var(--color-border)" }}
-              >
-                <option value="DAILY">Diária</option>
-                <option value="MONDAY_REVIEW">Revisão de segunda</option>
-                <option value="FRIDAY_REVIEW">Revisão de sexta</option>
-              </select>
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {questions.map((q) => (
-              <div key={q.id} className="p-4 flex items-center justify-between gap-3">
-                <span className="text-sm">
-                  <span className="text-xs font-semibold uppercase mr-2" style={{ color: "var(--color-text-secondary)" }}>
-                    {q.category.replace("_", " ")}
-                  </span>
-                  {q.text}
-                </span>
-                <button
-                  onClick={() => toggleQuestion(q.id, q.active)}
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: q.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {q.active ? "Ativa" : "Inativa"}
-                </button>
-              </div>
-            ))}
-          </div>
+      {tab === "Perguntas" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem suas próprias
+            perguntas (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <CheckInQuestionsSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
 
-      {tab === "Categorias de tarefas" && (
-        <div className="space-y-4">
-          <form onSubmit={addCategory} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-xs font-medium mb-1">Nome da categoria</label>
-              <input
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Ex.: Cliente, Interno, Comercial..."
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-            {categoryError && (
-              <p className="w-full text-xs" style={{ color: "var(--color-danger)" }}>
-                {categoryError}
-              </p>
-            )}
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {categories.map((c) => (
-              <div key={c.id} className="p-4 flex items-center justify-between gap-3">
-                <span className="text-sm">{c.name}</span>
-                <button
-                  onClick={() => toggleCategory(c.id, c.active)}
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: c.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {c.active ? "Ativa" : "Inativa"}
-                </button>
-              </div>
-            ))}
-            {categories.length === 0 && (
-              <p className="p-4 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                Nenhuma categoria cadastrada ainda.
-              </p>
-            )}
-          </div>
+      {tab === "Categorias de tarefas" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem suas próprias
+            categorias (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <TaskCategoriesSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
     </div>

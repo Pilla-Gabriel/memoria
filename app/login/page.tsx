@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthShell } from "@/components/layout/auth-shell";
 
@@ -97,13 +96,6 @@ function LoginForm() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
-
-      <p className="text-sm mt-6 text-center" style={{ color: "var(--color-text-secondary)" }}>
-        Ainda não tem conta?{" "}
-        <Link href="/registrar" className="font-semibold" style={{ color: "var(--color-primary)" }}>
-          Cadastre-se
-        </Link>
-      </p>
 
       {process.env.NODE_ENV !== "production" && process.env.SHOW_DEV_CREDENTIALS === "true" && (
         <div
