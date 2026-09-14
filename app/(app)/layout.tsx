@@ -18,7 +18,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
     redirect("/selecionar-base");
   }
 
-  const unreadCount = await runWithBase(baseId, () =>
+  const unreadCount = await runWithBase(baseId, async () =>
     prisma.alert.count({ where: { userId: session.user.id, read: false } })
   );
   const accessibleBases = await getAccessibleBases(session.user);

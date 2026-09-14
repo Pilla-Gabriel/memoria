@@ -34,6 +34,18 @@ export function requireBaseId(): string {
   return baseId;
 }
 
+// `fn` PRECISA ser `async` (ou envolver as chamadas com `Promise.all`/await
+// interno) — nunca um `() => prisma.x.findMany(...)` que apenas devolve a
+// Promise "preguiçosa" do Prisma sem a tocar. Prisma só executa a query (e
+// dispara a extensão de escopo em lib/prisma.ts) quando essa Promise é
+// aguardada; se isso acontece fora daqui (no `await runWithBase(...)` de
+// quem chamou), o contexto do AsyncLocalStorage já não está mais ativo e
+// getCurrentBaseId() volta undefined — a query roda com NO_BASE_SENTINEL e
+// devolve vazio, sem erro nenhum (bug real encontrado e corrigido em
+// app/(app)/checkin/page.tsx, revisao-semanal/page.tsx e (app)/layout.tsx).
+// `async () => prisma.x.findMany(...)` já é suficiente: o `return` implícito
+// de uma async function ainda faz o `.then()` disparar como continuação
+// rastreada por este `storage.run`, diferente de uma arrow function comum.
 export function runWithBase<T>(baseId: string, fn: () => T | Promise<T>): Promise<T> {
   return Promise.resolve(storage.run({ baseId }, fn));
 }
