@@ -37,6 +37,7 @@ const TYPE_META: Record<string, { icon: typeof Bell; tone: string }> = {
   META_RISCO: { icon: Target, tone: "warning" },
   META_VENCIDA: { icon: Target, tone: "danger" },
   CHECKIN_PENDENTE: { icon: MessageCircleQuestion, tone: "primary" },
+  CHECKIN_NAO_CONFIGURADO: { icon: MessageCircleQuestion, tone: "danger" },
   FRENTE_EM_RISCO: { icon: TrendingDown, tone: "danger" },
   FRENTE_SEM_ATUALIZACAO: { icon: RefreshCcw, tone: "warning" },
   BLOQUEIO_ABERTO: { icon: Lock, tone: "danger" },
@@ -52,7 +53,7 @@ const TONE_COLOR: Record<string, string> = {
 const GROUPS: { label: string; types: string[] }[] = [
   { label: "Prazos e tarefas", types: ["ATRASADA", "VENCE_HOJE", "PRAZO_1D", "PRAZO_3D", "PRAZO_7D", "SEM_PRAZO", "PRORROGACAO_PENDENTE"] },
   { label: "Metas", types: ["META_RISCO", "META_VENCIDA"] },
-  { label: "Check-in", types: ["CHECKIN_PENDENTE"] },
+  { label: "Check-in", types: ["CHECKIN_PENDENTE", "CHECKIN_NAO_CONFIGURADO"] },
   { label: "Entrega Semanal", types: ["FRENTE_EM_RISCO", "FRENTE_SEM_ATUALIZACAO", "BLOQUEIO_ABERTO"] },
 ];
 
@@ -60,6 +61,7 @@ const LINK_BY_TYPE: (a: Alert) => string | null = (a) => {
   if (a.relatedType === "Task" && a.relatedId) return `/tarefas/${a.relatedId}`;
   if (a.relatedType === "Goal" && a.relatedId) return `/metas/${a.relatedId}`;
   if (a.relatedType === "CheckInSession" && a.relatedId) return `/checkin/${a.relatedId}`;
+  if (a.relatedType === "CheckInConfig") return "/configuracoes";
   if (a.relatedType === "Frente" && a.relatedId) return `/entrega-semanal/frentes/${a.relatedId}`;
   if (a.relatedType === "WeeklyReport" && a.relatedId) return `/entrega-semanal/relatorios/${a.relatedId}`;
   return null;
