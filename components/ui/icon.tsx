@@ -10,6 +10,7 @@ import {
   Settings2,
   UserCog,
   Send,
+  Layers,
   type LucideProps,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const ICONS = {
   "settings-2": Settings2,
   "user-cog": UserCog,
   send: Send,
+  layers: Layers,
 } as const;
 
 export type IconName = keyof typeof ICONS;

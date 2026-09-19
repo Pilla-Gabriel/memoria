@@ -142,7 +142,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const canExtend = task.status !== "CONCLUIDA" && task.status !== "CANCELADA";
   const atLimit = task.extensionsUsed >= task.maxExtensions;
-  const isManager = role === "LEADER" || role === "ADMIN";
+  const isManager = role === "ADMIN";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -212,8 +212,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        <label className="block text-sm font-medium mb-1.5">Alterar status</label>
+        <label htmlFor="task-status" className="block text-sm font-medium mb-1.5">Alterar status</label>
         <select
+          id="task-status"
           value={task.status}
           onChange={(e) => updateStatus(e.target.value)}
           className="rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"

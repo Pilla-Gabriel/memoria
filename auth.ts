@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
+  // Sem hospedagem que já injeta isso (ex.: Vercel), o NextAuth rejeita como
+  // "UntrustedHost" qualquer requisição cujo header Host não seja o esperado
+  // — é por isso que o login funciona em localhost mas falha ao acessar o
+  // servidor por outro IP/hostname (ex.: outra máquina na rede/VPN).
+  trustHost: true,
   pages: {
     signIn: "/login",
   },

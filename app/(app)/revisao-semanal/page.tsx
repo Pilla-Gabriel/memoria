@@ -19,7 +19,7 @@ export default async function RevisaoSemanalPage() {
   const baseId = await getActiveBaseId(session.user);
   if (!baseId) redirect("/selecionar-base");
 
-  const sessions = await runWithBase(baseId, () =>
+  const sessions = await runWithBase(baseId, async () =>
     prisma.checkInSession.findMany({
       where: { userId, kind: { in: ["MONDAY_REVIEW", "FRIDAY_REVIEW"] } },
       include: { answers: true },

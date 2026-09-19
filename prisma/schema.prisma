@@ -11,7 +11,6 @@ datasource db {
 
 enum Role {
   USER
-  LEADER
   ADMIN
 }
 
@@ -91,6 +90,7 @@ enum AlertType {
   FRENTE_SEM_ATUALIZACAO
   BLOQUEIO_ABERTO
   PRORROGACAO_PENDENTE
+  CHECKIN_NAO_CONFIGURADO
 }
 
 enum FrenteSource {
@@ -140,7 +140,7 @@ model Base {
 
 // Quais bases cada usuário pode acessar. ADMIN enxerga todas as bases
 // implicitamente (ver lib/base-context.ts) e não precisa de registro aqui;
-// LEADER/USER só acessam as bases explicitamente concedidas.
+// USER só acessa as bases explicitamente concedidas.
 model UserBase {
   id     String @id @default(cuid())
   userId String
@@ -164,10 +164,6 @@ model User {
   onboardingDismissedAt DateTime?
   createdAt             DateTime  @default(now())
 
-  leaderId String?
-  leader   User?   @relation("TeamHierarchy", fields: [leaderId], references: [id])
-  reports  User[]  @relation("TeamHierarchy")
-
   checkInSessions      CheckInSession[]
   ownedTasks           Task[]                 @relation("TaskOwner")
   createdTasks         Task[]                 @relation("TaskCreatedBy")
@@ -187,10 +183,36 @@ model User {
   assignedBlockers     Blocker[]         @relation("BlockerOwner")
   weeklyReports        WeeklyReport[]
   userBases            UserBase[]
+
+  checkInSlots         CheckInSlot[]
+  checkInQuestions     CheckInQuestion[]
+  taskCategories       TaskCategory[]
+  pushSubscriptions    PushSubscription[]
+}
+
+// Uma inscrição de push por navegador/dispositivo — igual às três acima, não
+// tem baseId: notificação é por usuário, não por base. Ver
+// lib/services/push.ts (envio) e lib/services/notifications.ts (ponto único
+// que cria o Alert e dispara o push).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ---------- Check-in engine ----------
 
+// userId null = item padrão (compartilhado entre todas as bases, visível pra
+// quem ainda não personalizou). userId preenchido = item pessoal daquele
+// usuário — ou uma criação própria (overridesId null) ou uma cópia pessoal de
+// um item padrão que o dono editou/desativou (overridesId aponta pro padrão
+// original, escondendo-o só pra esse usuário). Ver lib/services/personalization.ts.
 model CheckInSlot {
   id        String   @id @default(cuid())
   time      String // "HH:mm"
@@ -198,7 +220,17 @@ model CheckInSlot {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  overridesId String?
+  overrides   CheckInSlot?  @relation("CheckInSlotOverride", fields: [overridesId], references: [id], onDelete: SetNull)
+  overriddenBy CheckInSlot[] @relation("CheckInSlotOverride")
+
   sessions CheckInSession[]
+
+  @@unique([userId, overridesId])
+  @@index([userId])
 }
 
 model CheckInQuestion {
@@ -208,7 +240,17 @@ model CheckInQuestion {
   active   Boolean     @default(true)
   order    Int         @default(0)
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  overridesId String?
+  overrides   CheckInQuestion?  @relation("CheckInQuestionOverride", fields: [overridesId], references: [id], onDelete: SetNull)
+  overriddenBy CheckInQuestion[] @relation("CheckInQuestionOverride")
+
   answers CheckInAnswer[]
+
+  @@unique([userId, overridesId])
+  @@index([userId])
 }
 
 model CheckInSession {
@@ -299,9 +341,20 @@ model TaskCode {
 
 model TaskCategory {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  overridesId String?
+  overrides   TaskCategory?  @relation("TaskCategoryOverride", fields: [overridesId], references: [id], onDelete: SetNull)
+  overriddenBy TaskCategory[] @relation("TaskCategoryOverride")
+
+  @@unique([userId, overridesId])
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 model TaskComment {

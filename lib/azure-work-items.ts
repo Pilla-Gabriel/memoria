@@ -4,17 +4,35 @@
 // recalcular as visões ao aplicar os filtros de sprint/responsável sem
 // precisar de uma nova requisição).
 
+// Categoria do estado (via Azure DevOps workitemtypes/states, campo `category`)
+// — usada só para colorir a badge de State na UI, nunca para decidir
+// conclusão/sincronização (isso continua isolado em syncBacklogCompletion).
+export type StateCategory = "Proposed" | "InProgress" | "Resolved" | "Completed" | "Removed" | "Other";
+
 export type WorkItemLite = {
   id: number;
   type: string;
   state: string;
+  stateCategory: StateCategory;
   sprint: string;
   assignee: string;
   parentId: number | null;
   title: string;
   hours: number;
   estimatedHours: number;
+  effort: number | null;
+  targetDate: string | null;
+  demandType: string | null;
+  planning: string | null;
+  activity: string | null;
+  url: string;
 };
+
+// Somar muitos valores de hora em ponto flutuante produz artefatos tipo
+// 16711.730000000003 — arredonda pra 2 casas antes de qualquer exibição.
+export function roundHours(value: number) {
+  return Math.round(value * 100) / 100;
+}
 
 export type StateGroup = { state: string; count: number; hours: number; estimatedHours: number };
 export type TypeGroup = { type: string; count: number; hours: number; estimatedHours: number; states: StateGroup[] };
@@ -67,9 +85,18 @@ export function buildSprintGroups(items: WorkItemLite[]): SprintGroup[] {
     .sort((a, b) => a.sprint.localeCompare(b.sprint, "pt-BR", { numeric: true }))
     .map((s) => ({
       ...s,
+      hours: roundHours(s.hours),
+      estimatedHours: roundHours(s.estimatedHours),
       types: s.types
         .sort((a, b) => typeSortIndex(a.type) - typeSortIndex(b.type))
-        .map((t) => ({ ...t, states: t.states.sort((a, b) => a.state.localeCompare(b.state, "pt-BR")) })),
+        .map((t) => ({
+          ...t,
+          hours: roundHours(t.hours),
+          estimatedHours: roundHours(t.estimatedHours),
+          states: t.states
+            .sort((a, b) => a.state.localeCompare(b.state, "pt-BR"))
+            .map((st) => ({ ...st, hours: roundHours(st.hours), estimatedHours: roundHours(st.estimatedHours) })),
+        })),
     }));
 }
 
@@ -104,7 +131,47 @@ export function buildHoursByPbi(items: WorkItemLite[]): PbiHours[] {
     }
   }
 
-  return Array.from(hoursByPbiMap.values()).sort((a, b) => b.hours - a.hours || a.pbiId - b.pbiId);
+  return Array.from(hoursByPbiMap.values())
+    .map((p) => ({ ...p, hours: roundHours(p.hours), estimatedHours: roundHours(p.estimatedHours) }))
+    .sort((a, b) => b.hours - a.hours || a.pbiId - b.pbiId);
+}
+
+export type UserGroup = {
+  assignee: string;
+  count: number;
+  hours: number;
+  estimatedHours: number;
+  effort: number;
+  items: WorkItemLite[];
+};
+
+// Agrupamento operacional por responsável (o fluxo real do time: sprint atual
+// × pessoa), usado na aba Azure DevOps de Entrega Semanal. Diferente de
+// buildHoursByAssignee (só totais, para o gráfico do Executivo), aqui cada
+// grupo carrega os itens em si para a tabela de detalhe.
+export function buildUserGroups(items: WorkItemLite[]): UserGroup[] {
+  const map = new Map<string, UserGroup>();
+  for (const item of items) {
+    let group = map.get(item.assignee);
+    if (!group) {
+      group = { assignee: item.assignee, count: 0, hours: 0, estimatedHours: 0, effort: 0, items: [] };
+      map.set(item.assignee, group);
+    }
+    group.count += 1;
+    group.hours += item.hours;
+    group.estimatedHours += item.estimatedHours;
+    group.effort += item.effort ?? 0;
+    group.items.push(item);
+  }
+
+  const typeRank = (type: string) => typeSortIndex(type);
+  for (const group of map.values()) {
+    group.items.sort((a, b) => typeRank(a.type) - typeRank(b.type) || a.title.localeCompare(b.title, "pt-BR"));
+  }
+
+  return Array.from(map.values())
+    .map((g) => ({ ...g, hours: roundHours(g.hours), estimatedHours: roundHours(g.estimatedHours), effort: roundHours(g.effort) }))
+    .sort((a, b) => b.count - a.count || a.assignee.localeCompare(b.assignee, "pt-BR"));
 }
 
 export function buildHoursByAssignee(items: WorkItemLite[]): AssigneeHours[] {
@@ -119,5 +186,7 @@ export function buildHoursByAssignee(items: WorkItemLite[]): AssigneeHours[] {
       map.set(item.assignee, { assignee: item.assignee, hours: item.hours, estimatedHours: item.estimatedHours, count: 1 });
     }
   }
-  return Array.from(map.values()).sort((a, b) => b.hours - a.hours);
+  return Array.from(map.values())
+    .map((a) => ({ ...a, hours: roundHours(a.hours), estimatedHours: roundHours(a.estimatedHours) }))
+    .sort((a, b) => b.hours - a.hours);
 }

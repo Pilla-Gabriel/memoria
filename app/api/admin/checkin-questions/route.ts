@@ -2,30 +2,37 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createItem, defaultsOnly, effectiveListFor } from "@/lib/services/personalization";
 
 const schema = z.object({
   text: z.string().min(5),
   category: z.enum(["DAILY", "MONDAY_REVIEW", "FRIDAY_REVIEW"]),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const questions = await prisma.checkInQuestion.findMany({ orderBy: [{ category: "asc" }, { order: "asc" }] });
+  const isDefaultScope = new URL(request.url).searchParams.get("scope") === "default";
+  if (isDefaultScope && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
+  }
+
+  const questions = isDefaultScope
+    ? await defaultsOnly(prisma.checkInQuestion)
+    : await effectiveListFor(prisma.checkInQuestion, session.user.id);
+  questions.sort((a, b) => a.category.localeCompare(b.category) || a.order - b.order);
   return NextResponse.json({ questions });
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
-  }
+  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await request.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
 
-  const question = await prisma.checkInQuestion.create({ data: parsed.data });
+  const question = await createItem(prisma.checkInQuestion, session.user, parsed.data);
   return NextResponse.json({ question });
 }

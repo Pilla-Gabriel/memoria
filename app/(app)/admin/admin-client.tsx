@@ -1,27 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { PlayCircle, Pencil, UserPlus } from "lucide-react";
+import { CheckInSlotsSection } from "@/components/settings/checkin-slots-section";
+import { CheckInQuestionsSection } from "@/components/settings/checkin-questions-section";
+import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
 
-type User = { id: string; name: string; email: string; role: string; active: boolean; leaderId: string | null };
-type Slot = { id: string; time: string; label: string; active: boolean };
-type Question = { id: string; text: string; category: string; active: boolean };
-type Category = { id: string; name: string; active: boolean };
+type User = { id: string; name: string; email: string; role: string; active: boolean };
 
 const TABS = ["Usuários", "Horários de check-in", "Perguntas", "Categorias de tarefas"] as const;
 
 export function AdminPageClient() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Usuários");
   const [users, setUsers] = useState<User[]>([]);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [newSlotTime, setNewSlotTime] = useState("");
-  const [newSlotLabel, setNewSlotLabel] = useState("");
-  const [newQuestionText, setNewQuestionText] = useState("");
-  const [newQuestionCategory, setNewQuestionCategory] = useState("DAILY");
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
 
   const [showNewUser, setShowNewUser] = useState(false);
@@ -29,7 +22,6 @@ export function AdminPageClient() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState("USER");
-  const [newUserLeaderId, setNewUserLeaderId] = useState("");
   const [newUserError, setNewUserError] = useState<string | null>(null);
   const [savingUser, setSavingUser] = useState(false);
 
@@ -40,16 +32,8 @@ export function AdminPageClient() {
   const [editUserError, setEditUserError] = useState<string | null>(null);
 
   async function loadAll() {
-    const [u, s, q, c] = await Promise.all([
-      fetch("/api/admin/users").then((r) => r.json()),
-      fetch("/api/admin/checkin-slots").then((r) => r.json()),
-      fetch("/api/admin/checkin-questions").then((r) => r.json()),
-      fetch("/api/admin/task-categories").then((r) => r.json()),
-    ]);
+    const u = await fetch("/api/admin/users").then((r) => r.json());
     setUsers(u.users ?? []);
-    setSlots(s.slots ?? []);
-    setQuestions(q.questions ?? []);
-    setCategories(c.categories ?? []);
   }
 
   useEffect(() => {
@@ -77,7 +61,6 @@ export function AdminPageClient() {
         email: newUserEmail,
         password: newUserPassword,
         role: newUserRole,
-        leaderId: newUserLeaderId || null,
       }),
     });
     setSavingUser(false);
@@ -90,7 +73,6 @@ export function AdminPageClient() {
     setNewUserEmail("");
     setNewUserPassword("");
     setNewUserRole("USER");
-    setNewUserLeaderId("");
     setShowNewUser(false);
     loadAll();
   }
@@ -123,76 +105,6 @@ export function AdminPageClient() {
     loadAll();
   }
 
-  async function addSlot(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newSlotTime || !newSlotLabel) return;
-    await fetch("/api/admin/checkin-slots", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ time: newSlotTime, label: newSlotLabel }),
-    });
-    setNewSlotTime("");
-    setNewSlotLabel("");
-    loadAll();
-  }
-
-  async function toggleSlot(id: string, active: boolean) {
-    await fetch(`/api/admin/checkin-slots/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    loadAll();
-  }
-
-  async function addQuestion(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newQuestionText) return;
-    await fetch("/api/admin/checkin-questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newQuestionText, category: newQuestionCategory }),
-    });
-    setNewQuestionText("");
-    loadAll();
-  }
-
-  async function toggleQuestion(id: string, active: boolean) {
-    await fetch(`/api/admin/checkin-questions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    loadAll();
-  }
-
-  async function addCategory(e: React.FormEvent) {
-    e.preventDefault();
-    setCategoryError(null);
-    if (!newCategoryName.trim()) return;
-    const res = await fetch("/api/admin/task-categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCategoryName.trim() }),
-    });
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setCategoryError(json.error ?? "Não foi possível criar a categoria.");
-      return;
-    }
-    setNewCategoryName("");
-    loadAll();
-  }
-
-  async function toggleCategory(id: string, active: boolean) {
-    await fetch(`/api/admin/task-categories/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    loadAll();
-  }
-
   async function triggerCheckins() {
     setTriggerMsg("Disparando...");
     const res = await fetch("/api/checkin/trigger", { method: "POST" });
@@ -212,12 +124,19 @@ export function AdminPageClient() {
       </div>
       {triggerMsg && <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{triggerMsg}</p>}
 
-      <div className="flex gap-2 border-b" style={{ borderColor: "var(--color-border)" }}>
+      <div
+        role="tablist"
+        aria-label="Seções de administração"
+        className="flex gap-2 border-b overflow-x-auto"
+        style={{ borderColor: "var(--color-border)" }}
+      >
         {TABS.map((t) => (
           <button
             key={t}
+            role="tab"
+            aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className="px-3 py-2 text-sm font-semibold"
+            className="px-3 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
             style={{
               color: tab === t ? "var(--color-primary)" : "var(--color-text-secondary)",
               borderBottom: tab === t ? "2px solid var(--color-primary)" : "2px solid transparent",
@@ -242,8 +161,9 @@ export function AdminPageClient() {
           {showNewUser && (
             <form onSubmit={addUser} className="card p-5 flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[160px]">
-                <label className="block text-xs font-medium mb-1">Nome</label>
+                <label htmlFor="admin-new-user-name" className="block text-xs font-medium mb-1">Nome</label>
                 <input
+                  id="admin-new-user-name"
                   required
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
@@ -252,8 +172,9 @@ export function AdminPageClient() {
                 />
               </div>
               <div className="flex-1 min-w-[180px]">
-                <label className="block text-xs font-medium mb-1">E-mail</label>
+                <label htmlFor="admin-new-user-email" className="block text-xs font-medium mb-1">E-mail</label>
                 <input
+                  id="admin-new-user-email"
                   required
                   type="email"
                   value={newUserEmail}
@@ -263,8 +184,9 @@ export function AdminPageClient() {
                 />
               </div>
               <div className="min-w-[140px]">
-                <label className="block text-xs font-medium mb-1">Senha</label>
+                <label htmlFor="admin-new-user-password" className="block text-xs font-medium mb-1">Senha</label>
                 <input
+                  id="admin-new-user-password"
                   required
                   type="password"
                   value={newUserPassword}
@@ -275,34 +197,16 @@ export function AdminPageClient() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Perfil</label>
+                <label htmlFor="admin-new-user-role" className="block text-xs font-medium mb-1">Perfil</label>
                 <select
+                  id="admin-new-user-role"
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
                   className="rounded-lg border px-3 py-2 text-sm bg-transparent"
                   style={{ borderColor: "var(--color-border)" }}
                 >
                   <option value="USER">Usuário</option>
-                  <option value="LEADER">Líder</option>
                   <option value="ADMIN">Administrador</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">Líder</label>
-                <select
-                  value={newUserLeaderId}
-                  onChange={(e) => setNewUserLeaderId(e.target.value)}
-                  className="rounded-lg border px-3 py-2 text-sm bg-transparent"
-                  style={{ borderColor: "var(--color-border)" }}
-                >
-                  <option value="">Nenhum</option>
-                  {users
-                    .filter((l) => l.role !== "USER")
-                    .map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
-                      </option>
-                    ))}
                 </select>
               </div>
               <button type="submit" disabled={savingUser} className="btn-primary px-4 py-2 text-sm disabled:opacity-60">
@@ -324,7 +228,6 @@ export function AdminPageClient() {
                     <th className="p-4 font-semibold">Nome</th>
                     <th className="p-4 font-semibold">E-mail</th>
                     <th className="p-4 font-semibold">Perfil</th>
-                    <th className="p-4 font-semibold">Líder</th>
                     <th className="p-4 font-semibold">Ativo</th>
                     <th className="p-4 font-semibold"></th>
                   </tr>
@@ -333,11 +236,12 @@ export function AdminPageClient() {
                   {users.map((u) =>
                     editingUserId === u.id ? (
                       <tr key={u.id} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                        <td className="p-4" colSpan={6}>
+                        <td className="p-4" colSpan={5}>
                           <div className="flex flex-wrap gap-2 items-end">
                             <div className="flex-1 min-w-[140px]">
-                              <label className="block text-xs font-medium mb-1">Nome</label>
+                              <label htmlFor={`admin-edit-name-${u.id}`} className="block text-xs font-medium mb-1">Nome</label>
                               <input
+                                id={`admin-edit-name-${u.id}`}
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
                                 className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none"
@@ -345,8 +249,9 @@ export function AdminPageClient() {
                               />
                             </div>
                             <div className="flex-1 min-w-[160px]">
-                              <label className="block text-xs font-medium mb-1">E-mail</label>
+                              <label htmlFor={`admin-edit-email-${u.id}`} className="block text-xs font-medium mb-1">E-mail</label>
                               <input
+                                id={`admin-edit-email-${u.id}`}
                                 type="email"
                                 value={editEmail}
                                 onChange={(e) => setEditEmail(e.target.value)}
@@ -355,8 +260,9 @@ export function AdminPageClient() {
                               />
                             </div>
                             <div className="min-w-[140px]">
-                              <label className="block text-xs font-medium mb-1">Nova senha (opcional)</label>
+                              <label htmlFor={`admin-edit-password-${u.id}`} className="block text-xs font-medium mb-1">Nova senha (opcional)</label>
                               <input
+                                id={`admin-edit-password-${u.id}`}
                                 type="password"
                                 value={editPassword}
                                 onChange={(e) => setEditPassword(e.target.value)}
@@ -395,25 +301,7 @@ export function AdminPageClient() {
                             style={{ borderColor: "var(--color-border)" }}
                           >
                             <option value="USER">Usuário</option>
-                            <option value="LEADER">Líder</option>
                             <option value="ADMIN">Administrador</option>
-                          </select>
-                        </td>
-                        <td className="p-4">
-                          <select
-                            value={u.leaderId ?? ""}
-                            onChange={(e) => updateUser(u.id, { leaderId: e.target.value || null })}
-                            className="rounded-lg border px-2 py-1.5 text-xs bg-transparent"
-                            style={{ borderColor: "var(--color-border)" }}
-                          >
-                            <option value="">Nenhum</option>
-                            {users
-                              .filter((l) => l.role !== "USER" && l.id !== u.id)
-                              .map((l) => (
-                                <option key={l.id} value={l.id}>
-                                  {l.name}
-                                </option>
-                              ))}
                           </select>
                         </td>
                         <td className="p-4">
@@ -444,147 +332,33 @@ export function AdminPageClient() {
         </div>
       )}
 
-      {tab === "Horários de check-in" && (
-        <div className="space-y-4">
-          <form onSubmit={addSlot} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div>
-              <label className="block text-xs font-medium mb-1">Horário</label>
-              <input
-                type="time"
-                value={newSlotTime}
-                onChange={(e) => setNewSlotTime(e.target.value)}
-                className="rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <div className="flex-1 min-w-[160px]">
-              <label className="block text-xs font-medium mb-1">Rótulo</label>
-              <input
-                value={newSlotLabel}
-                onChange={(e) => setNewSlotLabel(e.target.value)}
-                placeholder="Ex.: Check-in da manhã"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {slots.map((s) => (
-              <div key={s.id} className="p-4 flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {s.time} — {s.label}
-                </span>
-                <button
-                  onClick={() => toggleSlot(s.id, s.active)}
-                  className="text-xs font-semibold"
-                  style={{ color: s.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {s.active ? "Ativo" : "Inativo"}
-                </button>
-              </div>
-            ))}
-          </div>
+      {tab === "Horários de check-in" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem seus próprios
+            horários (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <CheckInSlotsSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
 
-      {tab === "Perguntas" && (
-        <div className="space-y-4">
-          <form onSubmit={addQuestion} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-xs font-medium mb-1">Pergunta</label>
-              <input
-                value={newQuestionText}
-                onChange={(e) => setNewQuestionText(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">Categoria</label>
-              <select
-                value={newQuestionCategory}
-                onChange={(e) => setNewQuestionCategory(e.target.value)}
-                className="rounded-lg border px-3 py-2 text-sm bg-transparent"
-                style={{ borderColor: "var(--color-border)" }}
-              >
-                <option value="DAILY">Diária</option>
-                <option value="MONDAY_REVIEW">Revisão de segunda</option>
-                <option value="FRIDAY_REVIEW">Revisão de sexta</option>
-              </select>
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {questions.map((q) => (
-              <div key={q.id} className="p-4 flex items-center justify-between gap-3">
-                <span className="text-sm">
-                  <span className="text-xs font-semibold uppercase mr-2" style={{ color: "var(--color-text-secondary)" }}>
-                    {q.category.replace("_", " ")}
-                  </span>
-                  {q.text}
-                </span>
-                <button
-                  onClick={() => toggleQuestion(q.id, q.active)}
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: q.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {q.active ? "Ativa" : "Inativa"}
-                </button>
-              </div>
-            ))}
-          </div>
+      {tab === "Perguntas" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem suas próprias
+            perguntas (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <CheckInQuestionsSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
 
-      {tab === "Categorias de tarefas" && (
-        <div className="space-y-4">
-          <form onSubmit={addCategory} className="card p-5 flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-xs font-medium mb-1">Nome da categoria</label>
-              <input
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Ex.: Cliente, Interno, Comercial..."
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "var(--color-border)" }}
-              />
-            </div>
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Adicionar
-            </button>
-            {categoryError && (
-              <p className="w-full text-xs" style={{ color: "var(--color-danger)" }}>
-                {categoryError}
-              </p>
-            )}
-          </form>
-
-          <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {categories.map((c) => (
-              <div key={c.id} className="p-4 flex items-center justify-between gap-3">
-                <span className="text-sm">{c.name}</span>
-                <button
-                  onClick={() => toggleCategory(c.id, c.active)}
-                  className="text-xs font-semibold shrink-0"
-                  style={{ color: c.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
-                >
-                  {c.active ? "Ativa" : "Inativa"}
-                </button>
-              </div>
-            ))}
-            {categories.length === 0 && (
-              <p className="p-4 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                Nenhuma categoria cadastrada ainda.
-              </p>
-            )}
-          </div>
+      {tab === "Categorias de tarefas" && session?.user?.id && (
+        <div className="space-y-2">
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            Conjunto padrão, compartilhado entre todas as bases — usado por quem ainda não tem suas próprias
+            categorias (ver Configurações). Editar aqui muda o padrão pra todo mundo que não personalizou.
+          </p>
+          <TaskCategoriesSection currentUserId={session.user.id} mode="default" />
         </div>
       )}
     </div>

@@ -23,12 +23,18 @@
 # misc
 .DS_Store
 *.pem
+*.pfx
+*.cer
+/scripts/certs/
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+dev-server.log
+service.log
+/scripts/run-service.generated.bat
 
 # env files (can opt-in for committing if needed)
 .env*

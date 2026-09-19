@@ -5,8 +5,12 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Sun, Moon, Pencil, Check, X } from "lucide-react";
+import { CheckInSlotsSection } from "@/components/settings/checkin-slots-section";
+import { CheckInQuestionsSection } from "@/components/settings/checkin-questions-section";
+import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
+import { PushOptIn } from "@/components/notifications/push-opt-in";
 
-const ROLE_LABEL: Record<string, string> = { USER: "Usuário", LEADER: "Líder", ADMIN: "Administrador" };
+const ROLE_LABEL: Record<string, string> = { USER: "Usuário", ADMIN: "Administrador" };
 
 export default function ConfiguracoesPage() {
   const { data: session, update } = useSession();
@@ -67,19 +71,25 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-2xl space-y-6">
       <h1 className="text-2xl font-bold">Configurações</h1>
+
+      <div className="card p-6">
+        <h2 className="font-semibold mb-3">Notificações</h2>
+        <PushOptIn />
+      </div>
 
       <div className="card p-6">
         <h2 className="font-semibold mb-3">Perfil</h2>
         <div className="text-sm space-y-2.5">
           {editingName ? (
             <form onSubmit={saveName} className="flex items-center gap-2">
-              <strong className="shrink-0">Nome:</strong>
+              <strong className="shrink-0" id="profile-name-label">Nome:</strong>
               <input
                 autoFocus
                 required
                 minLength={2}
+                aria-labelledby="profile-name-label"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="flex-1 rounded-lg border px-2.5 py-1.5 text-sm outline-none"
@@ -165,6 +175,7 @@ export default function ConfiguracoesPage() {
           <input
             type="password"
             required
+            aria-label="Senha atual"
             placeholder="Senha atual"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -175,6 +186,7 @@ export default function ConfiguracoesPage() {
             type="password"
             required
             minLength={6}
+            aria-label="Nova senha"
             placeholder="Nova senha"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -197,6 +209,35 @@ export default function ConfiguracoesPage() {
           </button>
         </form>
       </div>
+
+      {session?.user?.id && (
+        <>
+          <div className="card p-6">
+            <h2 className="font-semibold mb-1">Meus horários de check-in</h2>
+            <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+              Horários em que você recebe check-ins. Os marcados "Padrão" são compartilhados — editar ou desativar um
+              deles cria uma versão só sua, sem afetar os outros usuários.
+            </p>
+            <CheckInSlotsSection currentUserId={session.user.id} mode="personal" />
+          </div>
+
+          <div className="card p-6">
+            <h2 className="font-semibold mb-1">Minhas perguntas de check-in</h2>
+            <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+              Perguntas feitas nos seus check-ins diários e nas revisões semanais.
+            </p>
+            <CheckInQuestionsSection currentUserId={session.user.id} mode="personal" />
+          </div>
+
+          <div className="card p-6">
+            <h2 className="font-semibold mb-1">Minhas categorias de tarefas</h2>
+            <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+              Categorias disponíveis pra você ao criar ou editar uma tarefa.
+            </p>
+            <TaskCategoriesSection currentUserId={session.user.id} mode="personal" />
+          </div>
+        </>
+      )}
     </div>
   );
 }

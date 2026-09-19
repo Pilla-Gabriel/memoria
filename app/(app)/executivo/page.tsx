@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import dynamic from "next/dynamic";
 import { StatCard } from "@/components/ui/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AzureBreakdownTable } from "@/components/entrega-semanal/azure-breakdown-table";
-import { CHART_COLORS, chartAxisTick, chartGridStroke, chartTooltipStyle } from "@/components/charts/chart-theme";
 import {
   TrendingUp,
   AlertOctagon,
@@ -53,6 +51,17 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const SUMMARY_POLL_MS = 60_000;
+
+// Recharts é a maior dependência client-side do bundle — carregada sob
+// demanda (fora do chunk inicial da página) em vez de importada no topo.
+const StatusBarChart = dynamic(() => import("@/components/charts/status-bar-chart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[280px]" />,
+});
+const AzureBreakdownTable = dynamic(
+  () => import("@/components/entrega-semanal/azure-breakdown-table").then((m) => m.AzureBreakdownTable),
+  { ssr: false, loading: () => <Skeleton className="h-[110px]" /> }
+);
 
 export default function ExecutivoPage() {
   const [data, setData] = useState<Summary | null>(null);
@@ -140,15 +149,7 @@ export default function ExecutivoPage() {
       <div className="card p-5">
         <h2 className="font-semibold mb-4">Tarefas por status</h2>
         <div style={{ width: "100%", height: 280 }}>
-          <ResponsiveContainer>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
-              <XAxis dataKey="name" tick={chartAxisTick} />
-              <YAxis allowDecimals={false} tick={chartAxisTick} />
-              <Tooltip {...chartTooltipStyle} />
-              <Bar dataKey="total" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <StatusBarChart chartData={chartData} />
         </div>
       </div>
 

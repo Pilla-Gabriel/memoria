@@ -12,7 +12,7 @@ export async function GET() {
   }
 
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, active: true, leaderId: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
     orderBy: { name: "asc" },
   });
 
@@ -43,9 +43,8 @@ export async function POST(request: Request) {
       email: parsed.data.email,
       passwordHash,
       role: parsed.data.role,
-      leaderId: parsed.data.leaderId || null,
     },
-    select: { id: true, name: true, email: true, role: true, active: true, leaderId: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
   });
 
   await logAudit({ entityType: "User", entityId: user.id, action: "CRIADO", userId: session.user.id });

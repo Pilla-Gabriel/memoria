@@ -1,9 +1,11 @@
 import { createServer } from "http";
+import { createServer as createHttpsServer } from "https";
+import { readFileSync } from "fs";
 import next from "next";
 import { schedule } from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { runWithBase, runUnscoped } from "@/lib/base-context";
-import { ensureSessionsForSlot, ensureWeeklyReviewSessions } from "@/lib/services/checkin";
+import { dispatchDueSlotSessions, ensureWeeklyReviewSessions } from "@/lib/services/checkin";
 import { runDailyAlertsJob } from "@/lib/services/alerts";
 import { ensureWeeklyReportDrafts } from "@/lib/services/weekly-report";
 import { syncAllAzureFrentes } from "@/lib/services/frentes";
@@ -43,13 +45,9 @@ function currentHHmm() {
 }
 
 async function checkAndDispatchSlots() {
-  const nowLabel = currentHHmm();
-  const slots = await prisma.checkInSlot.findMany({ where: { active: true, time: nowLabel } });
-  for (const slot of slots) {
-    const created = await ensureSessionsForSlot(slot.id);
-    if (created.length) {
-      console.log(`[cron] ${created.length} check-in(s) criado(s) para o slot "${slot.label}" (${slot.time})`);
-    }
+  const created = await dispatchDueSlotSessions(currentHHmm());
+  if (created.length) {
+    console.log(`[cron] ${created.length} check-in(s) criado(s) para o horário atual`);
   }
 }
 
@@ -86,6 +84,30 @@ app.prepare().then(() => {
   httpServer.listen(port, () => {
     console.log(`> MEMÓRIA rodando em http://localhost:${port} (${dev ? "development" : "production"})`);
   });
+
+  // HTTPS é opcional e só sobe em produção (npm run start) quando há
+  // certificado configurado (ver scripts/setup-https-cert.ps1) — necessário
+  // para notificações de área de trabalho: navegadores só expõem Service
+  // Worker/Notification/PushManager em contexto seguro (HTTPS ou localhost),
+  // nunca em HTTP puro por IP. Gated em `!dev` pra uma instância de dev
+  // preview rodando em paralelo (outra porta) não brigar pela 443 com o
+  // serviço de produção já em execução na mesma máquina.
+  if (!dev && process.env.HTTPS_PFX_PATH) {
+    const httpsPort = parseInt(process.env.HTTPS_PORT || "443", 10);
+    const httpsServer = createHttpsServer(
+      {
+        pfx: readFileSync(process.env.HTTPS_PFX_PATH),
+        passphrase: process.env.HTTPS_PFX_PASSPHRASE,
+      },
+      (req, res) => {
+        handle(req, res);
+      }
+    );
+    httpsServer.on("upgrade", app.getUpgradeHandler());
+    httpsServer.listen(httpsPort, () => {
+      console.log(`> MEMÓRIA rodando em https://localhost:${httpsPort} (${dev ? "development" : "production"})`);
+    });
+  }
 
   // Verifica a cada minuto, de segunda a sexta, se algum horário de check-in bate com o horário atual.
   schedule("* * * * 1-5", () => {

@@ -15,8 +15,8 @@ export type AccessibleBase = {
   color: string;
 };
 
-// ADMIN enxerga todas as bases implicitamente. LEADER/USER só acessam as
-// bases com um UserBase explícito.
+// ADMIN enxerga todas as bases implicitamente. USER só acessa as bases com
+// um UserBase explícito.
 export async function getAccessibleBases(user: { id: string; role: string }): Promise<AccessibleBase[]> {
   if (user.role === "ADMIN") {
     return prisma.base.findMany({ orderBy: { name: "asc" } });

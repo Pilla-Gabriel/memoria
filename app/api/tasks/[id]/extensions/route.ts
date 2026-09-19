@@ -3,24 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { extensionRequestSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
-import { requireBaseId } from "@/lib/base-context";
+import { notifyUser } from "@/lib/services/notifications";
 
-async function notifyApprover(task: { id: string; title: string; ownerId: string }) {
-  const owner = await prisma.user.findUnique({ where: { id: task.ownerId }, select: { leaderId: true } });
-  const approver = owner?.leaderId
-    ? await prisma.user.findUnique({ where: { id: owner.leaderId }, select: { id: true } })
-    : await prisma.user.findFirst({ where: { role: "ADMIN", active: true }, orderBy: { createdAt: "asc" }, select: { id: true } });
+async function notifyApprover(task: { id: string; title: string }) {
+  const approver = await prisma.user.findFirst({
+    where: { role: "ADMIN", active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
   if (!approver) return;
 
-  await prisma.alert.create({
-    data: {
-      userId: approver.id,
-      type: "PRORROGACAO_PENDENTE",
-      relatedType: "Task",
-      relatedId: task.id,
-      message: `A tarefa "${task.title}" tem uma prorrogação aguardando sua aprovação.`,
-      baseId: requireBaseId(),
-    },
+  await notifyUser({
+    userId: approver.id,
+    type: "PRORROGACAO_PENDENTE",
+    relatedType: "Task",
+    relatedId: task.id,
+    message: `A tarefa "${task.title}" tem uma prorrogação aguardando sua aprovação.`,
   });
 }
 

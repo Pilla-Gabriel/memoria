@@ -99,17 +99,6 @@ async function main() {
     },
   });
 
-  const leader = await prisma.user.upsert({
-    where: { email: "lider@memoria.app" },
-    update: {},
-    create: {
-      name: "Líder de Equipe",
-      email: "lider@memoria.app",
-      passwordHash,
-      role: "LEADER",
-    },
-  });
-
   const usuario = await prisma.user.upsert({
     where: { email: "usuario@memoria.app" },
     update: {},
@@ -118,14 +107,13 @@ async function main() {
       email: "usuario@memoria.app",
       passwordHash,
       role: "USER",
-      leaderId: leader.id,
     },
   });
 
   // ADMIN enxerga todas as bases implicitamente (lib/base-context.ts) e não
-  // precisa de UserBase. Líder e usuário de demonstração começam só com
-  // acesso à NORD, que é onde os dados de demonstração já existentes vivem.
-  for (const userId of [leader.id, usuario.id]) {
+  // precisa de UserBase. Usuário de demonstração começa só com acesso à
+  // NORD, que é onde os dados de demonstração já existentes vivem.
+  for (const userId of [usuario.id]) {
     await prisma.userBase.upsert({
       where: { userId_baseId: { userId, baseId: nord.id } },
       update: {},
@@ -187,7 +175,6 @@ async function main() {
 
   console.log("Seed concluído.");
   console.log("Admin:", admin.email, "/ senha: memoria123");
-  console.log("Líder:", leader.email, "/ senha: memoria123");
   console.log("Usuário: usuario@memoria.app / senha: memoria123");
 }
 

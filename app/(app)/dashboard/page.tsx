@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveBaseId } from "@/lib/active-base";
 import { runWithBase } from "@/lib/base-context";
+import { getEffectiveActiveSlotsFor } from "@/lib/services/checkin";
+import { daysBetween } from "@/lib/services/risk-engine";
 import { StatCard } from "@/components/ui/stat-card";
 import { EntregaSemanalSummaryPanel } from "@/components/entrega-semanal/summary-panel";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/dashboard/onboarding-checklist";
@@ -74,7 +76,7 @@ export default async function DashboardPage() {
       prisma.goal.count({ where: { ownerId: userId, status: "EM_RISCO" } }),
       prisma.checkInSession.count({ where: { userId, status: "PENDENTE" } }),
       prisma.checkInSession.count({ where: { userId, status: "RESPONDIDO" } }),
-      prisma.checkInSlot.count({ where: { active: true } }),
+      getEffectiveActiveSlotsFor(userId).then((slots) => slots.length),
       prisma.user.findUnique({ where: { id: userId }, select: { onboardingDismissedAt: true } }),
       prisma.task.count({ where: { ownerId: userId, status: "CANCELADA" } }),
     ])
@@ -86,11 +88,17 @@ export default async function DashboardPage() {
   const onboardingSteps: OnboardingStep[] = [
     { label: "Responda seu primeiro check-in", done: checkinsRespondidos > 0, href: "/checkin" },
     { label: "Crie sua primeira meta", done: metasTotal > 0, href: "/metas/nova" },
-    ...(session.user.role === "ADMIN"
-      ? [{ label: "Configure os horários de check-in", done: activeSlots > 0, href: "/admin" }]
-      : []),
+    { label: "Configure seus horários de check-in", done: activeSlots > 0, href: "/configuracoes" },
   ];
-  const showOnboarding = !currentUser?.onboardingDismissedAt && onboardingSteps.some((s) => !s.done);
+  // Dispensar o card não pode significar "nunca mais" enquanto sobrar passo
+  // pendente — pra alguém esquecido, "fechar isso depois" e nunca mais ver é
+  // o desfecho mais provável, não a exceção. Volta a aparecer depois de
+  // ONBOARDING_SNOOZE_DAYS em vez de ficar escondido pra sempre.
+  const ONBOARDING_SNOOZE_DAYS = 7;
+  const dismissedRecently =
+    !!currentUser?.onboardingDismissedAt &&
+    daysBetween(new Date(), currentUser.onboardingDismissedAt) < ONBOARDING_SNOOZE_DAYS;
+  const showOnboarding = !dismissedRecently && onboardingSteps.some((s) => !s.done);
 
   return (
     <div className="space-y-8">

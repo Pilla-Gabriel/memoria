@@ -1,32 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #06a9f4;
-  --color-primary-dark: #0097e6;
-  --color-accent: #fff200;
-  --color-success: #22c55e;
+  /* Paleta ONCLICK (lp.onclick.com.br/kpl): azul + amarelo como cores de
+     marca, verde/vermelho para positivo/negativo. */
+  --color-primary: #009fe3;
+  --color-primary-dark: #0278aa;
+  --color-accent: #ffe100;
+  --color-success: #2aa55d;
   --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --color-danger: #e24444;
 
   --color-bg: #f8fafc;
   --color-card: #ffffff;
   --color-border: #e2e8f0;
-  --color-text: #1f2937;
+  --color-text: #161a1e;
   --color-text-secondary: #6b7280;
-  --color-accent-ink: #1f2937;
+  --color-accent-ink: #161a1e;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+  --shadow-card: none;
+
+  /* Texto dos badges de status/prioridade — tons calibrados para o chip
+     rgba(...,0.12) sobre --color-bg claro; redefinidos no dark abaixo. */
+  --badge-neutral-fg: #374151;
+  --badge-warning-fg: #92400e;
+  --badge-success-fg: #166534;
+  --badge-muted-fg: #6b7280;
+  --badge-danger-fg: #991b1b;
 }
 
 :root[data-theme="dark"] {
   --color-bg: #0b1220;
   --color-card: #111a2c;
-  --color-border: #24304a;
+  --color-border: #2c3b5a;
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
-  --color-accent-ink: #1f2937;
+  --color-accent-ink: #161a1e;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-card: none;
+
+  --badge-neutral-fg: #cbd5e1;
+  --badge-warning-fg: #fbbf24;
+  --badge-success-fg: #4ade80;
+  --badge-muted-fg: #94a3b8;
+  --badge-danger-fg: #f87171;
 }
 
 @theme inline {
@@ -42,7 +58,7 @@
   --color-text: var(--color-text);
   --color-text-secondary: var(--color-text-secondary);
 
-  --font-sans: var(--font-inter), "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-barlow), "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 html {
@@ -60,17 +76,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Cartões retos com borda fina em vez de sombra suave — linguagem visual da
+   lp.onclick.com.br/kpl (bordas de cor + cantos discretos, sem elevação). */
 .card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: var(--shadow-card);
 }
 
+/* Botões em formato de pílula — mesma forma dos CTAs da landing (border-radius: 99px). */
 .btn-primary {
   background: var(--color-primary);
   color: #ffffff;
-  border-radius: 0.75rem;
+  border-radius: 9999px;
   font-weight: 600;
   transition: background-color 0.15s ease, transform 0.05s ease;
 }
@@ -86,7 +105,7 @@ body {
 .btn-accent {
   background: var(--color-accent);
   color: var(--color-accent-ink);
-  border-radius: 0.75rem;
+  border-radius: 9999px;
   font-weight: 600;
   transition: filter 0.15s ease, transform 0.05s ease;
 }
@@ -101,4 +120,27 @@ body {
 
 .brand-wave {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 60%);
+}
+
+/* O resto do app usa classes utilitárias do Tailwind (rounded-xl/rounded-lg)
+   direto em botões e links espalhados por várias páginas, em vez da classe
+   .btn-primary/.btn-accent acima — força a forma de pílula ali também sem
+   precisar editar cada arquivo. Não afeta inputs, cards ou outros elementos
+   que usam essas mesmas classes de raio. */
+button.rounded-xl,
+a.rounded-xl,
+button.rounded-2xl,
+a.rounded-2xl,
+button.rounded-lg,
+a.rounded-lg {
+  border-radius: 9999px;
+}
+
+/* Vários inputs/selects/textareas pelo app usam a utilitária outline-none do
+   Tailwind sem nenhum substituto de foco — usuário de teclado perde a
+   indicação de onde está. Restaura um anel de foco visível só quando o
+   elemento é alcançado por teclado (:focus-visible), sem tocar cada arquivo. */
+.outline-none:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }

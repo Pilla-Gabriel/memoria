@@ -94,8 +94,9 @@ export function NovaFrenteForm() {
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Nome da frente</label>
+          <label htmlFor="frente-name" className="block text-sm font-medium mb-1.5">Nome da frente</label>
           <input
+            id="frente-name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -105,8 +106,9 @@ export function NovaFrenteForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Descrição</label>
+          <label htmlFor="frente-description" className="block text-sm font-medium mb-1.5">Descrição</label>
           <textarea
+            id="frente-description"
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -116,8 +118,9 @@ export function NovaFrenteForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Indicador</label>
+          <label htmlFor="frente-indicator" className="block text-sm font-medium mb-1.5">Indicador</label>
           <input
+            id="frente-indicator"
             required
             value={indicator}
             onChange={(e) => setIndicator(e.target.value)}
@@ -129,8 +132,9 @@ export function NovaFrenteForm() {
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Linha de base</label>
+            <label htmlFor="frente-baseline" className="block text-sm font-medium mb-1.5">Linha de base</label>
             <input
+              id="frente-baseline"
               required
               type="number"
               step="any"
@@ -141,8 +145,9 @@ export function NovaFrenteForm() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Meta 30 dias</label>
+            <label htmlFor="frente-target-value" className="block text-sm font-medium mb-1.5">Meta 30 dias</label>
             <input
+              id="frente-target-value"
               required
               type="number"
               step="any"
@@ -153,8 +158,9 @@ export function NovaFrenteForm() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Unidade</label>
+            <label htmlFor="frente-unit" className="block text-sm font-medium mb-1.5">Unidade</label>
             <input
+              id="frente-unit"
               required
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
@@ -166,8 +172,9 @@ export function NovaFrenteForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Prazo da meta</label>
+          <label htmlFor="frente-target-date" className="block text-sm font-medium mb-1.5">Prazo da meta</label>
           <input
+            id="frente-target-date"
             required
             type="date"
             value={targetDate}
@@ -179,8 +186,9 @@ export function NovaFrenteForm() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Fonte dos números</label>
+            <label htmlFor="frente-source" className="block text-sm font-medium mb-1.5">Fonte dos números</label>
             <select
+              id="frente-source"
               value={source}
               onChange={(e) => setSource(e.target.value)}
               className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"
@@ -194,8 +202,9 @@ export function NovaFrenteForm() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Detalhe da fonte (link/board)</label>
+            <label htmlFor="frente-source-detail" className="block text-sm font-medium mb-1.5">Detalhe da fonte (link/board)</label>
             <input
+              id="frente-source-detail"
               value={sourceDetail}
               onChange={(e) => setSourceDetail(e.target.value)}
               placeholder="https://..."

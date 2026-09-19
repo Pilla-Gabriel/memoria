@@ -132,8 +132,9 @@ export function GoalForm({
       )}
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Título</label>
+        <label htmlFor="goal-title" className="block text-sm font-medium mb-1.5">Título</label>
         <input
+          id="goal-title"
           required
           value={values.title}
           onChange={(e) => update("title", e.target.value)}
@@ -144,8 +145,9 @@ export function GoalForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Descrição</label>
+        <label htmlFor="goal-description" className="block text-sm font-medium mb-1.5">Descrição</label>
         <textarea
+          id="goal-description"
           rows={2}
           value={values.description}
           onChange={(e) => update("description", e.target.value)}
@@ -156,8 +158,9 @@ export function GoalForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Tipo</label>
+          <label htmlFor="goal-type" className="block text-sm font-medium mb-1.5">Tipo</label>
           <select
+            id="goal-type"
             value={values.type}
             onChange={(e) => update("type", e.target.value)}
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"
@@ -171,8 +174,9 @@ export function GoalForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Indicador</label>
+          <label htmlFor="goal-indicator" className="block text-sm font-medium mb-1.5">Indicador</label>
           <input
+            id="goal-indicator"
             required
             value={values.indicator}
             onChange={(e) => update("indicator", e.target.value)}
@@ -212,6 +216,7 @@ export function GoalForm({
         {values.unitType === "NUMBER" && (
           <input
             required
+            aria-label="Rótulo da unidade"
             value={values.unitLabel}
             onChange={(e) => update("unitLabel", e.target.value)}
             placeholder="Rótulo da unidade — ex.: clientes, itens, projetos"
@@ -223,10 +228,11 @@ export function GoalForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium mb-1.5">
+          <label htmlFor="goal-target-value" className="block text-sm font-medium mb-1.5">
             Meta (valor{values.unitType === "PERCENTAGE" ? " em %" : ""})
           </label>
           <input
+            id="goal-target-value"
             required
             type="number"
             step="any"
@@ -237,8 +243,9 @@ export function GoalForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Prazo</label>
+          <label htmlFor="goal-due-date" className="block text-sm font-medium mb-1.5">Prazo</label>
           <input
+            id="goal-due-date"
             required
             type="date"
             value={values.dueDate}
@@ -251,8 +258,9 @@ export function GoalForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Início</label>
+        <label htmlFor="goal-start-date" className="block text-sm font-medium mb-1.5">Início</label>
         <input
+          id="goal-start-date"
           required
           type="date"
           value={values.startDate}
@@ -264,8 +272,9 @@ export function GoalForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Critério de sucesso</label>
+        <label htmlFor="goal-success-criteria" className="block text-sm font-medium mb-1.5">Critério de sucesso</label>
         <textarea
+          id="goal-success-criteria"
           required
           rows={2}
           value={values.successCriteria}

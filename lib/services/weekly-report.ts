@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { computeFrenteComparison, getWindowStartFor } from "@/lib/services/frentes";
 import { requireBaseId } from "@/lib/base-context";
 import { getActiveUserIdsWithBaseAccess } from "@/lib/base-access";
+import { notifyUser } from "@/lib/services/notifications";
 
 function startOfDay(date: Date) {
   const d = new Date(date);
@@ -19,14 +20,14 @@ function mondayOfWeek(date: Date) {
 
 /**
  * Cria (se ainda não existir) um rascunho de relatório semanal para cada
- * líder/administrador ativo — são eles que normalmente reportam à liderança.
+ * administrador ativo — são eles que gerenciam as frentes reportadas.
  */
 export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: Date = new Date()) {
   const weekStart = mondayOfWeek(date);
   const baseId = requireBaseId();
   const accessibleUserIds = await getActiveUserIdsWithBaseAccess(baseId);
   const reporters = await prisma.user.findMany({
-    where: { id: { in: accessibleUserIds }, role: { in: ["LEADER", "ADMIN"] } },
+    where: { id: { in: accessibleUserIds }, role: "ADMIN" },
     select: { id: true },
   });
 
@@ -41,18 +42,15 @@ export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: 
       data: { createdById: reporter.id, kind, weekStart, baseId },
     });
 
-    await prisma.alert.create({
-      data: {
-        userId: reporter.id,
-        type: "CHECKIN_PENDENTE",
-        relatedType: "WeeklyReport",
-        relatedId: report.id,
-        message:
-          kind === "SEGUNDA"
-            ? "O relatório de Entrega Semanal de segunda-feira está pronto para ser preenchido."
-            : "O relatório de Entrega Semanal de sexta-feira está pronto para ser preenchido.",
-        baseId,
-      },
+    await notifyUser({
+      userId: reporter.id,
+      type: "CHECKIN_PENDENTE",
+      relatedType: "WeeklyReport",
+      relatedId: report.id,
+      message:
+        kind === "SEGUNDA"
+          ? "O relatório de Entrega Semanal de segunda-feira está pronto para ser preenchido."
+          : "O relatório de Entrega Semanal de sexta-feira está pronto para ser preenchido.",
     });
 
     created.push(report.id);

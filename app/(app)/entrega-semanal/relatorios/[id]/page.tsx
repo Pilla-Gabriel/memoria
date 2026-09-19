@@ -147,8 +147,9 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
         )}
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Hoje</label>
+            <label htmlFor="relatorio-hoje" className="block text-sm font-medium mb-1.5">Hoje</label>
             <textarea
+              id="relatorio-hoje"
               rows={2}
               value={hoje}
               onChange={(e) => setHoje(e.target.value)}
@@ -158,8 +159,9 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Semana</label>
+            <label htmlFor="relatorio-semana" className="block text-sm font-medium mb-1.5">Semana</label>
             <textarea
+              id="relatorio-semana"
               rows={3}
               value={semana}
               onChange={(e) => {
@@ -172,8 +174,9 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Vitória</label>
+            <label htmlFor="relatorio-vitoria" className="block text-sm font-medium mb-1.5">Vitória</label>
             <textarea
+              id="relatorio-vitoria"
               rows={3}
               value={vitoria}
               onChange={(e) => {

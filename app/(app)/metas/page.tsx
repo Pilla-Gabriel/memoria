@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { GoalStatusBadge, GoalTypeLabel } from "@/components/goals/goal-status-badge";
@@ -19,6 +20,11 @@ type Goal = {
 
 function MetasList() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  // Sem hierarquia de liderança formalizada (ver lib/rbac.ts), só o admin tem
+  // um "ver tudo" que faz sentido — pra qualquer outro papel seria idêntico a
+  // "Minhas".
+  const canSeeTeam = session?.user?.role === "ADMIN";
   const [goals, setGoals] = useState<Goal[]>([]);
   const [scope, setScope] = useState<"mine" | "team">("mine");
   const [loading, setLoading] = useState(true);
@@ -46,22 +52,24 @@ function MetasList() {
         </Link>
       </div>
 
-      <div className="flex rounded-xl border overflow-hidden text-sm w-fit" style={{ borderColor: "var(--color-border)" }}>
-        <button
-          onClick={() => setScope("mine")}
-          className="px-3 py-2 font-medium"
-          style={{ background: scope === "mine" ? "var(--color-primary)" : "transparent", color: scope === "mine" ? "#fff" : "var(--color-text)" }}
-        >
-          Minhas
-        </button>
-        <button
-          onClick={() => setScope("team")}
-          className="px-3 py-2 font-medium"
-          style={{ background: scope === "team" ? "var(--color-primary)" : "transparent", color: scope === "team" ? "#fff" : "var(--color-text)" }}
-        >
-          Equipe
-        </button>
-      </div>
+      {canSeeTeam && (
+        <div className="flex rounded-xl border overflow-hidden text-sm w-fit" style={{ borderColor: "var(--color-border)" }}>
+          <button
+            onClick={() => setScope("mine")}
+            className="px-3 py-2 font-medium"
+            style={{ background: scope === "mine" ? "var(--color-primary)" : "transparent", color: scope === "mine" ? "#fff" : "var(--color-text)" }}
+          >
+            Minhas
+          </button>
+          <button
+            onClick={() => setScope("team")}
+            className="px-3 py-2 font-medium"
+            style={{ background: scope === "team" ? "var(--color-primary)" : "transparent", color: scope === "team" ? "#fff" : "var(--color-text)" }}
+          >
+            Todas
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>
@@ -83,7 +91,15 @@ function MetasList() {
                 </div>
                 <h3 className="font-semibold">{goal.title}</h3>
                 <div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
+                  <div
+                    role="progressbar"
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Progresso: ${pct}%`}
+                    className="h-2 rounded-full overflow-hidden"
+                    style={{ background: "var(--color-border)" }}
+                  >
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "var(--color-primary)" }} />
                   </div>
                   <p className="text-xs mt-1.5" style={{ color: "var(--color-text-secondary)" }}>

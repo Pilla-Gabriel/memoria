@@ -2,31 +2,30 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { updateOrFork, deleteOrHide } from "@/lib/services/personalization";
 
 const schema = z.object({ active: z.boolean().optional(), time: z.string().optional(), label: z.string().optional() });
 
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
-  }
+  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id } = await ctx.params;
   const body = await request.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
 
-  const slot = await prisma.checkInSlot.update({ where: { id }, data: parsed.data });
-  return NextResponse.json({ slot });
+  const result = await updateOrFork(prisma.checkInSlot, session.user, id, parsed.data);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json({ slot: result.item });
 }
 
-export async function DELETE(request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
-  }
+  if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id } = await ctx.params;
-  await prisma.checkInSlot.delete({ where: { id } });
+  const result = await deleteOrHide(prisma.checkInSlot, session.user, id);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ ok: true });
 }

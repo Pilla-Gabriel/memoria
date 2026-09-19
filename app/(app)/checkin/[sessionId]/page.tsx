@@ -119,6 +119,12 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
   const isPending = session.status === "PENDENTE";
   const actionable = session.answers.filter((a) => a.isActionable);
   const pendingConversion = actionable.filter((a) => !a.convertedTaskId);
+  // Sem nenhuma pergunta ativa, "Finalizar check-in" viraria um clique vazio
+  // que marca a sessão como respondida sem nada de fato registrado — a mesma
+  // brecha de accountability que os alertas de tarefa/meta já fecham, só que
+  // por uma porta que a personalização de perguntas abriu. Em vez de deixar
+  // "concluir", aponta pra onde resolver.
+  const noActiveQuestions = isPending && questions.length === 0;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -129,7 +135,19 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
         <h1 className="text-2xl font-bold mt-2">{KIND_LABEL[session.kind]}</h1>
       </div>
 
-      {isPending ? (
+      {noActiveQuestions ? (
+        <div className="card p-5 flex items-start gap-3 text-sm" style={{ background: "rgba(239,68,68,0.08)" }}>
+          <AlertTriangle size={18} style={{ color: "var(--color-danger)" }} className="shrink-0 mt-0.5" />
+          <span>
+            Você não tem nenhuma pergunta ativa para este tipo de check-in, então não há o que responder aqui. Ative
+            ou crie ao menos uma em{" "}
+            <Link href="/configuracoes" className="font-semibold underline">
+              Configurações
+            </Link>{" "}
+            para continuar.
+          </span>
+        </div>
+      ) : isPending ? (
         <div className="card p-4 sm:p-6 space-y-4">
           <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
             {transcript.map((t, i) => (
@@ -213,7 +231,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                     onClick={toggleListening}
                     aria-label={speech.listening ? "Parar gravação" : "Responder por voz"}
                     title={speech.listening ? "Parar gravação" : "Responder por voz"}
-                    className="absolute right-2.5 top-2.5 p-1.5 rounded-full"
+                    className="absolute right-0 top-0 w-11 h-11 rounded-full flex items-center justify-center"
                     style={{
                       background: speech.listening ? "var(--color-danger)" : "rgba(6,169,244,0.12)",
                       color: speech.listening ? "#fff" : "var(--color-primary)",

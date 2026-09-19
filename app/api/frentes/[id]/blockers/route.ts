@@ -4,8 +4,9 @@ import { blockerCreateSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
 import { getScopedFrente } from "@/lib/base-guards";
+import { notifyUser } from "@/lib/services/notifications";
 
-export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session, baseId) => {
+export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
   const frente = await getScopedFrente(id);
   if (!frente) return NextResponse.json({ error: "Frente não encontrada" }, { status: 404 });
@@ -37,15 +38,12 @@ export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request
   });
 
   if (blocker.ownerToUnblockId) {
-    await prisma.alert.create({
-      data: {
-        userId: blocker.ownerToUnblockId,
-        type: "BLOQUEIO_ABERTO",
-        relatedType: "Frente",
-        relatedId: id,
-        message: `Você foi apontado como responsável por destravar: "${blocker.description}" (frente "${frente.name}").`,
-        baseId,
-      },
+    await notifyUser({
+      userId: blocker.ownerToUnblockId,
+      type: "BLOQUEIO_ABERTO",
+      relatedType: "Frente",
+      relatedId: id,
+      message: `Você foi apontado como responsável por destravar: "${blocker.description}" (frente "${frente.name}").`,
     });
   }
 

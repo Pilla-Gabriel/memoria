@@ -27,7 +27,13 @@ export async function POST(request: Request) {
   response.cookies.set(ACTIVE_BASE_COOKIE, base.id, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Não usar `NODE_ENV === "production"` aqui: o app roda em produção
+    // (npm run start) servido por HTTP puro na rede interna/VPN, sem TLS.
+    // Um cookie `Secure` é descartado silenciosamente pelo navegador fora de
+    // HTTPS — a base "trocava" no servidor mas o cookie nunca era salvo, e a
+    // próxima página caía de volta em /selecionar-base. Detecta o protocolo
+    // real da requisição em vez de assumir a partir do NODE_ENV.
+    secure: new URL(request.url).protocol === "https:" || request.headers.get("x-forwarded-proto") === "https",
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   });

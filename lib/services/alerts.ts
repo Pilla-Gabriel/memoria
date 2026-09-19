@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { daysBetween, evaluateGoalStatus, NO_DUE_DATE_GRACE_DAYS } from "@/lib/services/risk-engine";
 import { evaluateFrenteRisk } from "@/lib/services/frentes";
-import { markStaleSessionsAsIgnored } from "@/lib/services/checkin";
+import { markStaleSessionsAsIgnored, getEffectiveActiveSlotsFor } from "@/lib/services/checkin";
+import { effectiveListFor } from "@/lib/services/personalization";
+import { getActiveUserIdsWithBaseAccess } from "@/lib/base-access";
+import { notifyUser, type AlertKind } from "@/lib/services/notifications";
 import { logAudit } from "@/lib/audit";
 import { requireBaseId } from "@/lib/base-context";
 
@@ -14,25 +17,7 @@ function startOfDay(date: Date) {
   return d;
 }
 
-async function createAlertOnce(params: {
-  userId: string;
-  type:
-    | "PRAZO_7D"
-    | "PRAZO_3D"
-    | "PRAZO_1D"
-    | "VENCE_HOJE"
-    | "ATRASADA"
-    | "SEM_PRAZO"
-    | "META_RISCO"
-    | "META_VENCIDA"
-    | "CHECKIN_PENDENTE"
-    | "FRENTE_EM_RISCO"
-    | "FRENTE_SEM_ATUALIZACAO"
-    | "BLOQUEIO_ABERTO";
-  relatedType: string;
-  relatedId: string;
-  message: string;
-}) {
+async function createAlertOnce(params: { userId: string; type: AlertKind; relatedType: string; relatedId: string; message: string }) {
   const today = startOfDay(new Date());
   const existing = await prisma.alert.findFirst({
     where: {
@@ -45,7 +30,7 @@ async function createAlertOnce(params: {
   });
   if (existing) return;
 
-  await prisma.alert.create({ data: { ...params, baseId: requireBaseId() } });
+  await notifyUser(params);
 }
 
 export async function generateTaskAlerts() {
@@ -225,9 +210,46 @@ export async function generateFrenteAlerts() {
   }
 }
 
+// Horários e perguntas de check-in são personalizáveis por usuário (ver
+// lib/services/personalization.ts) — desativar todos os próprios sem deixar
+// rastro seria a mesma brecha que os demais generateXAlerts já fecham pra
+// tarefa/meta/frente, só que por uma porta nova: sem isso, alguém que
+// desativa todo o próprio horário simplesmente para de receber check-in pra
+// sempre, sem alerta nenhum pra ela ou pra quem lidera.
+export async function generateCheckInConfigAlerts() {
+  const baseId = requireBaseId();
+  const userIds = await getActiveUserIdsWithBaseAccess(baseId);
+
+  for (const userId of userIds) {
+    const slots = await getEffectiveActiveSlotsFor(userId);
+    if (slots.length === 0) {
+      await createAlertOnce({
+        userId,
+        type: "CHECKIN_NAO_CONFIGURADO",
+        relatedType: "CheckInConfig",
+        relatedId: `${userId}:slots`,
+        message: "Você não tem nenhum horário de check-in ativo — configure ao menos um em Configurações para voltar a receber check-ins.",
+      });
+      continue; // sem horário, o check-in diário nem chega a ser criado — checar perguntas não ajuda ainda
+    }
+
+    const dailyQuestions = await effectiveListFor(prisma.checkInQuestion, userId, { category: "DAILY" });
+    if (!dailyQuestions.some((q) => q.active)) {
+      await createAlertOnce({
+        userId,
+        type: "CHECKIN_NAO_CONFIGURADO",
+        relatedType: "CheckInConfig",
+        relatedId: `${userId}:daily`,
+        message: "Você não tem nenhuma pergunta ativa para o check-in diário — configure ao menos uma em Configurações.",
+      });
+    }
+  }
+}
+
 export async function runDailyAlertsJob() {
   await markStaleSessionsAsIgnored();
   await generateTaskAlerts();
   await generateGoalAlerts();
   await generateFrenteAlerts();
+  await generateCheckInConfigAlerts();
 }

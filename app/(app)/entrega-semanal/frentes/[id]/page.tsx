@@ -182,7 +182,15 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
         </p>
 
         <div className="mb-2">
-          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
+          <div
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Progresso: ${pct}%`}
+            className="h-2.5 rounded-full overflow-hidden"
+            style={{ background: "var(--color-border)" }}
+          >
             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "var(--color-primary)" }} />
           </div>
           <p className="text-xs mt-1.5">

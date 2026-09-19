@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthShell } from "@/components/layout/auth-shell";
 
@@ -21,11 +20,20 @@ function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    let result;
+    try {
+      result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+    } catch {
+      setLoading(false);
+      setError(
+        "Não foi possível conectar ao servidor de autenticação. Se você está acessando por um endereço diferente de localhost, confirme se esse host está liberado (variável DEV_ALLOWED_ORIGINS)."
+      );
+      return;
+    }
 
     setLoading(false);
 
@@ -89,20 +97,13 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="text-sm mt-6 text-center" style={{ color: "var(--color-text-secondary)" }}>
-        Ainda não tem conta?{" "}
-        <Link href="/registrar" className="font-semibold" style={{ color: "var(--color-primary)" }}>
-          Cadastre-se
-        </Link>
-      </p>
-
       {process.env.NODE_ENV !== "production" && process.env.SHOW_DEV_CREDENTIALS === "true" && (
         <div
           className="mt-8 rounded-xl px-4 py-3 text-xs"
           style={{ background: "var(--color-bg)", color: "var(--color-text-secondary)" }}
         >
           <p className="font-semibold mb-1">Contas de demonstração</p>
-          <p>admin@memoria.app · lider@memoria.app · usuario@memoria.app</p>
+          <p>admin@memoria.app · usuario@memoria.app</p>
           <p>senha: memoria123</p>
         </div>
       )}
