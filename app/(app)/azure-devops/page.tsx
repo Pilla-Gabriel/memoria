@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { auth } from "@/auth";
 import { getActiveBaseId } from "@/lib/active-base";
-import { AzureSprintBreakdown } from "@/components/entrega-semanal/azure-sprint-breakdown";
+
+// Recharts é a maior dependência client-side do bundle — carregada sob
+// demanda em vez de estática (ssr:false não é permitido em Server Component).
+const AzureSprintBreakdown = dynamic(() =>
+  import("@/components/entrega-semanal/azure-sprint-breakdown").then((m) => m.AzureSprintBreakdown)
+);
 
 export default async function AzureDevOpsPage() {
   const session = await auth();

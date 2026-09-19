@@ -39,8 +39,9 @@ function SlotForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) => P
   return (
     <form onSubmit={handleSubmit} className="card p-5 flex flex-wrap gap-2 items-end">
       <div>
-        <label className="block text-xs font-medium mb-1">Horário</label>
+        <label htmlFor="checkin-slot-time" className="block text-xs font-medium mb-1">Horário</label>
         <input
+          id="checkin-slot-time"
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
@@ -49,8 +50,9 @@ function SlotForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) => P
         />
       </div>
       <div className="flex-1 min-w-[160px]">
-        <label className="block text-xs font-medium mb-1">Rótulo</label>
+        <label htmlFor="checkin-slot-label" className="block text-xs font-medium mb-1">Rótulo</label>
         <input
+          id="checkin-slot-label"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="Ex.: Check-in da manhã"

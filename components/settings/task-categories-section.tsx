@@ -43,8 +43,9 @@ function CategoryForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) 
   return (
     <form onSubmit={handleSubmit} className="card p-5 flex flex-wrap gap-2 items-end">
       <div className="flex-1 min-w-[220px]">
-        <label className="block text-xs font-medium mb-1">Nome da categoria</label>
+        <label htmlFor="category-name" className="block text-xs font-medium mb-1">Nome da categoria</label>
         <input
+          id="category-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex.: Cliente, Interno, Comercial..."

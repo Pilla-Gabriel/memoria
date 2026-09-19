@@ -50,8 +50,9 @@ export function TaskForm({
       className="card p-6 space-y-4"
     >
       <div>
-        <label className="block text-sm font-medium mb-1.5">Título</label>
+        <label htmlFor="task-title" className="block text-sm font-medium mb-1.5">Título</label>
         <input
+          id="task-title"
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -61,8 +62,9 @@ export function TaskForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Descrição</label>
+        <label htmlFor="task-description" className="block text-sm font-medium mb-1.5">Descrição</label>
         <textarea
+          id="task-description"
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -73,8 +75,9 @@ export function TaskForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Prazo</label>
+          <label htmlFor="task-due-date" className="block text-sm font-medium mb-1.5">Prazo</label>
           <input
+            id="task-due-date"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -87,8 +90,9 @@ export function TaskForm({
           </p>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Prioridade</label>
+          <label htmlFor="task-priority" className="block text-sm font-medium mb-1.5">Prioridade</label>
           <select
+            id="task-priority"
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"
@@ -103,8 +107,9 @@ export function TaskForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Categoria</label>
+        <label htmlFor="task-category" className="block text-sm font-medium mb-1.5">Categoria</label>
         <select
+          id="task-category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"

@@ -45,8 +45,9 @@ function QuestionForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) 
   return (
     <form onSubmit={handleSubmit} className="card p-5 flex flex-wrap gap-2 items-end">
       <div className="flex-1 min-w-[220px]">
-        <label className="block text-xs font-medium mb-1">Pergunta</label>
+        <label htmlFor="checkin-question-text" className="block text-xs font-medium mb-1">Pergunta</label>
         <input
+          id="checkin-question-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
@@ -54,8 +55,9 @@ function QuestionForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) 
         />
       </div>
       <div>
-        <label className="block text-xs font-medium mb-1">Categoria</label>
+        <label htmlFor="checkin-question-category" className="block text-xs font-medium mb-1">Categoria</label>
         <select
+          id="checkin-question-category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm bg-transparent"

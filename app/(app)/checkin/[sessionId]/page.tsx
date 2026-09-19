@@ -231,7 +231,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                     onClick={toggleListening}
                     aria-label={speech.listening ? "Parar gravação" : "Responder por voz"}
                     title={speech.listening ? "Parar gravação" : "Responder por voz"}
-                    className="absolute right-2.5 top-2.5 p-1.5 rounded-full"
+                    className="absolute right-0 top-0 w-11 h-11 rounded-full flex items-center justify-center"
                     style={{
                       background: speech.listening ? "var(--color-danger)" : "rgba(6,169,244,0.12)",
                       color: speech.listening ? "#fff" : "var(--color-primary)",

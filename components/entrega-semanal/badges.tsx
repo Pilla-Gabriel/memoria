@@ -11,7 +11,7 @@ export function RiskBadge({ isAtRisk }: { isAtRisk: boolean }) {
     return (
       <span
         className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-        style={{ background: "rgba(34,197,94,0.12)", color: "#166534" }}
+        style={{ background: "rgba(34,197,94,0.12)", color: "var(--badge-success-fg)" }}
       >
         No prazo
       </span>
@@ -20,7 +20,7 @@ export function RiskBadge({ isAtRisk }: { isAtRisk: boolean }) {
   return (
     <span
       className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{ background: "rgba(239,68,68,0.12)", color: "#991b1b" }}
+      style={{ background: "rgba(239,68,68,0.12)", color: "var(--badge-danger-fg)" }}
     >
       Em risco
     </span>
@@ -34,7 +34,7 @@ export function BlockerStatusBadge({ status }: { status: string }) {
       className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
       style={{
         background: open ? "rgba(239,68,68,0.12)" : "rgba(34,197,94,0.12)",
-        color: open ? "#991b1b" : "#166534",
+        color: open ? "var(--badge-danger-fg)" : "var(--badge-success-fg)",
       }}
     >
       {open ? "Aberto" : "Resolvido"}
@@ -105,7 +105,7 @@ export function ReportStatusBadge({ status }: { status: string }) {
       className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
       style={{
         background: published ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)",
-        color: published ? "#166534" : "#92400e",
+        color: published ? "var(--badge-success-fg)" : "var(--badge-warning-fg)",
       }}
     >
       {published ? "Publicado" : "Rascunho"}
