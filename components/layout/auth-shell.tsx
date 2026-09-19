@@ -23,7 +23,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           fill="none"
           aria-hidden="true"
         >
-          <circle cx="130" cy="130" r="130" fill="#FFF200" />
+          <circle cx="130" cy="130" r="130" fill="#FFE100" />
         </svg>
 
         <Logo variant="onDark" />

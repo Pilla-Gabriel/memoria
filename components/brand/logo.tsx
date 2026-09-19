@@ -10,7 +10,7 @@ export function Logo({ variant = "onLight", className = "", showWordmark = true 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
-        <rect width="34" height="34" rx="10" fill="#06A9F4" />
+        <rect width="34" height="34" rx="10" fill="#009FE3" />
         <path
           d="M9 20.5V13l4.2 5.2L17.4 13v7.5"
           stroke="#FFFFFF"
@@ -25,7 +25,7 @@ export function Logo({ variant = "onLight", className = "", showWordmark = true 
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="27.2" cy="8.2" r="2.6" fill="#FFF200" />
+        <circle cx="27.2" cy="8.2" r="2.6" fill="#FFE100" />
       </svg>
       {showWordmark && (
         <span
