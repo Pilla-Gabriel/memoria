@@ -5,11 +5,12 @@ import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
 import { notifyUser } from "@/lib/services/notifications";
 
-async function notifyApprover(task: { id: string; title: string; ownerId: string }) {
-  const owner = await prisma.user.findUnique({ where: { id: task.ownerId }, select: { leaderId: true } });
-  const approver = owner?.leaderId
-    ? await prisma.user.findUnique({ where: { id: owner.leaderId }, select: { id: true } })
-    : await prisma.user.findFirst({ where: { role: "ADMIN", active: true }, orderBy: { createdAt: "asc" }, select: { id: true } });
+async function notifyApprover(task: { id: string; title: string }) {
+  const approver = await prisma.user.findFirst({
+    where: { role: "ADMIN", active: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
   if (!approver) return;
 
   await notifyUser({

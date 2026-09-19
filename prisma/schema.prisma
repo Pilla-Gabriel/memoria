@@ -11,7 +11,6 @@ datasource db {
 
 enum Role {
   USER
-  LEADER
   ADMIN
 }
 
@@ -141,7 +140,7 @@ model Base {
 
 // Quais bases cada usuário pode acessar. ADMIN enxerga todas as bases
 // implicitamente (ver lib/base-context.ts) e não precisa de registro aqui;
-// LEADER/USER só acessam as bases explicitamente concedidas.
+// USER só acessa as bases explicitamente concedidas.
 model UserBase {
   id     String @id @default(cuid())
   userId String
@@ -164,10 +163,6 @@ model User {
   active                Boolean   @default(true)
   onboardingDismissedAt DateTime?
   createdAt             DateTime  @default(now())
-
-  leaderId String?
-  leader   User?   @relation("TeamHierarchy", fields: [leaderId], references: [id])
-  reports  User[]  @relation("TeamHierarchy")
 
   checkInSessions      CheckInSession[]
   ownedTasks           Task[]                 @relation("TaskOwner")

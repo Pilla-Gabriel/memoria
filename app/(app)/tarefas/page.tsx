@@ -62,7 +62,10 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 function TarefasList() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const canSeeTeam = session?.user?.role === "LEADER" || session?.user?.role === "ADMIN";
+  // Sem hierarquia de liderança formalizada (ver lib/rbac.ts), só o admin tem
+  // um "ver tudo" que faz sentido — pra qualquer outro papel seria idêntico a
+  // "Minhas".
+  const canSeeTeam = session?.user?.role === "ADMIN";
   const [tasks, setTasks] = useState<Task[]>([]);
   const [statuses, setStatuses] = useState<string[]>(() => {
     const s = searchParams.get("status");
@@ -162,6 +165,7 @@ function TarefasList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por título..."
+            aria-label="Buscar por título"
             className="w-full rounded-xl border pl-9 pr-3 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
@@ -201,19 +205,80 @@ function TarefasList() {
                 color: scope === "team" ? "#fff" : "var(--color-text)",
               }}
             >
-              Equipe
+              Todas
             </button>
           </div>
         )}
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="sm:hidden flex items-center gap-2">
+        <label htmlFor="tarefas-mobile-sort" className="text-xs font-medium shrink-0" style={{ color: "var(--color-text-secondary)" }}>
+          Ordenar por
+        </label>
+        <select
+          id="tarefas-mobile-sort"
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as SortKey)}
+          className="flex-1 rounded-lg border px-2.5 py-1.5 text-sm outline-none bg-transparent"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          {COLUMNS.map((col) => (
+            <option key={col.key} value={col.key}>
+              {col.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+          aria-label={sortDir === "asc" ? "Ordem crescente" : "Ordem decrescente"}
+          className="rounded-lg border w-9 h-9 flex items-center justify-center shrink-0"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          {sortDir === "asc" ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
+        </button>
+      </div>
+
+      <div className="sm:hidden space-y-3">
+        {loading && <p className="text-center py-6 text-sm" style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>}
+        {!loading && filtered.length === 0 && (
+          <p className="text-center py-6 text-sm" style={{ color: "var(--color-text-secondary)" }}>Nenhuma tarefa encontrada.</p>
+        )}
+        {filtered.map((task) => (
+          <Link key={task.id} href={`/tarefas/${task.id}`} className="card p-4 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-3">
+              <span className="font-medium leading-snug">{task.title}</span>
+              <span className="text-xs shrink-0" style={{ color: "var(--color-text-secondary)" }}>
+                {task.displayCode ?? "—"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusBadge status={task.status} />
+              <PriorityBadge priority={task.priority} />
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              <span>{task.owner.name}</span>
+              <span>{task.category ?? "Sem categoria"}</span>
+              <span>{ORIGIN_LABEL[task.origin] ?? task.origin}</span>
+            </div>
+            <div className="text-xs font-medium">
+              {task.dueDate ? new Date(task.dueDate).toLocaleDateString("pt-BR") : <NeedsDueDateBadge />}
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="hidden sm:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b" style={{ borderColor: "var(--color-border)" }}>
                 {COLUMNS.map((col) => (
-                  <th key={col.key} className="p-4 font-semibold whitespace-nowrap">
+                  <th
+                    key={col.key}
+                    className="p-4 font-semibold whitespace-nowrap"
+                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                  >
                     <button onClick={() => toggleSort(col.key)} className="flex items-center gap-1 hover:opacity-70">
                       {col.label}
                       {sortKey === col.key ? (

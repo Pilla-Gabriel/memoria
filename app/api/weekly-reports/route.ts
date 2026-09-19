@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getVisibleUserIds } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
 
@@ -24,14 +23,8 @@ const createSchema = z.object({
 });
 
 export const GET = withBase(async (request, _ctx, session) => {
-  const { searchParams } = new URL(request.url);
-  const scope = searchParams.get("scope") ?? "mine";
-  const visibleIds = await getVisibleUserIds(session.user);
-
   const reports = await prisma.weeklyReport.findMany({
-    where: {
-      createdById: scope === "team" ? (visibleIds ? { in: visibleIds } : undefined) : session.user.id,
-    },
+    where: { createdById: session.user.id },
     include: { createdBy: { select: { id: true, name: true } } },
     orderBy: { weekStart: "desc" },
     take: 30,

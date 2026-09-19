@@ -10,7 +10,7 @@ import { CheckInQuestionsSection } from "@/components/settings/checkin-questions
 import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
 import { PushOptIn } from "@/components/notifications/push-opt-in";
 
-const ROLE_LABEL: Record<string, string> = { USER: "Usuário", LEADER: "Líder", ADMIN: "Administrador" };
+const ROLE_LABEL: Record<string, string> = { USER: "Usuário", ADMIN: "Administrador" };
 
 export default function ConfiguracoesPage() {
   const { data: session, update } = useSession();
@@ -84,11 +84,12 @@ export default function ConfiguracoesPage() {
         <div className="text-sm space-y-2.5">
           {editingName ? (
             <form onSubmit={saveName} className="flex items-center gap-2">
-              <strong className="shrink-0">Nome:</strong>
+              <strong className="shrink-0" id="profile-name-label">Nome:</strong>
               <input
                 autoFocus
                 required
                 minLength={2}
+                aria-labelledby="profile-name-label"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="flex-1 rounded-lg border px-2.5 py-1.5 text-sm outline-none"
@@ -174,6 +175,7 @@ export default function ConfiguracoesPage() {
           <input
             type="password"
             required
+            aria-label="Senha atual"
             placeholder="Senha atual"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -184,6 +186,7 @@ export default function ConfiguracoesPage() {
             type="password"
             required
             minLength={6}
+            aria-label="Nova senha"
             placeholder="Nova senha"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}

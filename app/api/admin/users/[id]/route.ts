@@ -33,7 +33,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const updated = await prisma.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, name: true, email: true, role: true, active: true, leaderId: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
   });
 
   if (parsed.data.role && parsed.data.role !== existing.role) {

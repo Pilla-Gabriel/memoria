@@ -4,16 +4,14 @@ export const adminUserCreateSchema = z.object({
   name: z.string().min(2, "Informe o nome completo"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter ao menos 6 caracteres"),
-  role: z.enum(["USER", "LEADER", "ADMIN"]).default("USER"),
-  leaderId: z.string().optional().nullable(),
+  role: z.enum(["USER", "ADMIN"]).default("USER"),
 });
 
 export const adminUserUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email("E-mail inválido").optional(),
   password: z.string().min(6, "A senha deve ter ao menos 6 caracteres").optional(),
-  role: z.enum(["USER", "LEADER", "ADMIN"]).optional(),
-  leaderId: z.string().nullable().optional(),
+  role: z.enum(["USER", "ADMIN"]).optional(),
   active: z.boolean().optional(),
 });
 

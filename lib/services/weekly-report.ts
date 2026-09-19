@@ -20,14 +20,14 @@ function mondayOfWeek(date: Date) {
 
 /**
  * Cria (se ainda não existir) um rascunho de relatório semanal para cada
- * líder/administrador ativo — são eles que normalmente reportam à liderança.
+ * administrador ativo — são eles que gerenciam as frentes reportadas.
  */
 export async function ensureWeeklyReportDrafts(kind: "SEGUNDA" | "SEXTA", date: Date = new Date()) {
   const weekStart = mondayOfWeek(date);
   const baseId = requireBaseId();
   const accessibleUserIds = await getActiveUserIdsWithBaseAccess(baseId);
   const reporters = await prisma.user.findMany({
-    where: { id: { in: accessibleUserIds }, role: { in: ["LEADER", "ADMIN"] } },
+    where: { id: { in: accessibleUserIds }, role: "ADMIN" },
     select: { id: true },
   });
 

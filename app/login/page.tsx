@@ -103,7 +103,7 @@ function LoginForm() {
           style={{ background: "var(--color-bg)", color: "var(--color-text-secondary)" }}
         >
           <p className="font-semibold mb-1">Contas de demonstração</p>
-          <p>admin@memoria.app · lider@memoria.app · usuario@memoria.app</p>
+          <p>admin@memoria.app · usuario@memoria.app</p>
           <p>senha: memoria123</p>
         </div>
       )}

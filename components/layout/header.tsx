@@ -16,7 +16,6 @@ const CONFIRM_DELAY_MS = 600;
 
 const ROLE_LABEL: Record<string, string> = {
   USER: "Usuário",
-  LEADER: "Líder",
   ADMIN: "Administrador",
 };
 
@@ -250,7 +249,11 @@ export function Header({
       className="h-16 flex items-center justify-between px-4 md:px-6 border-b sticky top-0 z-30"
       style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
     >
-      <button className="md:hidden p-2 -ml-2" onClick={onMenuClick} aria-label="Abrir menu">
+      <button
+        className="md:hidden -ml-2 min-w-11 min-h-11 flex items-center justify-center"
+        onClick={onMenuClick}
+        aria-label="Abrir menu"
+      >
         <Menu size={22} />
       </button>
 
@@ -259,7 +262,7 @@ export function Header({
       <div className="flex items-center gap-2 md:gap-4">
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-full hover:bg-black/5"
+          className="rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
           aria-label="Alternar tema"
           title="Alternar tema claro/escuro"
         >
@@ -268,7 +271,7 @@ export function Header({
 
         <Link
           href="/alertas"
-          className="relative p-2 rounded-full hover:bg-black/5"
+          className="relative rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
           aria-label="Alertas"
         >
           <Bell size={19} />
@@ -291,7 +294,7 @@ export function Header({
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="p-2 rounded-full hover:bg-black/5"
+          className="rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
           aria-label="Sair"
           title="Sair"
         >

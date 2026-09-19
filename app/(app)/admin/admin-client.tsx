@@ -7,7 +7,7 @@ import { CheckInSlotsSection } from "@/components/settings/checkin-slots-section
 import { CheckInQuestionsSection } from "@/components/settings/checkin-questions-section";
 import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
 
-type User = { id: string; name: string; email: string; role: string; active: boolean; leaderId: string | null };
+type User = { id: string; name: string; email: string; role: string; active: boolean };
 
 const TABS = ["Usuários", "Horários de check-in", "Perguntas", "Categorias de tarefas"] as const;
 
@@ -22,7 +22,6 @@ export function AdminPageClient() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState("USER");
-  const [newUserLeaderId, setNewUserLeaderId] = useState("");
   const [newUserError, setNewUserError] = useState<string | null>(null);
   const [savingUser, setSavingUser] = useState(false);
 
@@ -62,7 +61,6 @@ export function AdminPageClient() {
         email: newUserEmail,
         password: newUserPassword,
         role: newUserRole,
-        leaderId: newUserLeaderId || null,
       }),
     });
     setSavingUser(false);
@@ -75,7 +73,6 @@ export function AdminPageClient() {
     setNewUserEmail("");
     setNewUserPassword("");
     setNewUserRole("USER");
-    setNewUserLeaderId("");
     setShowNewUser(false);
     loadAll();
   }
@@ -127,12 +124,19 @@ export function AdminPageClient() {
       </div>
       {triggerMsg && <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{triggerMsg}</p>}
 
-      <div className="flex gap-2 border-b" style={{ borderColor: "var(--color-border)" }}>
+      <div
+        role="tablist"
+        aria-label="Seções de administração"
+        className="flex gap-2 border-b overflow-x-auto"
+        style={{ borderColor: "var(--color-border)" }}
+      >
         {TABS.map((t) => (
           <button
             key={t}
+            role="tab"
+            aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className="px-3 py-2 text-sm font-semibold"
+            className="px-3 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
             style={{
               color: tab === t ? "var(--color-primary)" : "var(--color-text-secondary)",
               borderBottom: tab === t ? "2px solid var(--color-primary)" : "2px solid transparent",
@@ -157,8 +161,9 @@ export function AdminPageClient() {
           {showNewUser && (
             <form onSubmit={addUser} className="card p-5 flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[160px]">
-                <label className="block text-xs font-medium mb-1">Nome</label>
+                <label htmlFor="admin-new-user-name" className="block text-xs font-medium mb-1">Nome</label>
                 <input
+                  id="admin-new-user-name"
                   required
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
@@ -167,8 +172,9 @@ export function AdminPageClient() {
                 />
               </div>
               <div className="flex-1 min-w-[180px]">
-                <label className="block text-xs font-medium mb-1">E-mail</label>
+                <label htmlFor="admin-new-user-email" className="block text-xs font-medium mb-1">E-mail</label>
                 <input
+                  id="admin-new-user-email"
                   required
                   type="email"
                   value={newUserEmail}
@@ -178,8 +184,9 @@ export function AdminPageClient() {
                 />
               </div>
               <div className="min-w-[140px]">
-                <label className="block text-xs font-medium mb-1">Senha</label>
+                <label htmlFor="admin-new-user-password" className="block text-xs font-medium mb-1">Senha</label>
                 <input
+                  id="admin-new-user-password"
                   required
                   type="password"
                   value={newUserPassword}
@@ -190,34 +197,16 @@ export function AdminPageClient() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Perfil</label>
+                <label htmlFor="admin-new-user-role" className="block text-xs font-medium mb-1">Perfil</label>
                 <select
+                  id="admin-new-user-role"
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
                   className="rounded-lg border px-3 py-2 text-sm bg-transparent"
                   style={{ borderColor: "var(--color-border)" }}
                 >
                   <option value="USER">Usuário</option>
-                  <option value="LEADER">Líder</option>
                   <option value="ADMIN">Administrador</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">Líder</label>
-                <select
-                  value={newUserLeaderId}
-                  onChange={(e) => setNewUserLeaderId(e.target.value)}
-                  className="rounded-lg border px-3 py-2 text-sm bg-transparent"
-                  style={{ borderColor: "var(--color-border)" }}
-                >
-                  <option value="">Nenhum</option>
-                  {users
-                    .filter((l) => l.role !== "USER")
-                    .map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name}
-                      </option>
-                    ))}
                 </select>
               </div>
               <button type="submit" disabled={savingUser} className="btn-primary px-4 py-2 text-sm disabled:opacity-60">
@@ -239,7 +228,6 @@ export function AdminPageClient() {
                     <th className="p-4 font-semibold">Nome</th>
                     <th className="p-4 font-semibold">E-mail</th>
                     <th className="p-4 font-semibold">Perfil</th>
-                    <th className="p-4 font-semibold">Líder</th>
                     <th className="p-4 font-semibold">Ativo</th>
                     <th className="p-4 font-semibold"></th>
                   </tr>
@@ -248,11 +236,12 @@ export function AdminPageClient() {
                   {users.map((u) =>
                     editingUserId === u.id ? (
                       <tr key={u.id} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                        <td className="p-4" colSpan={6}>
+                        <td className="p-4" colSpan={5}>
                           <div className="flex flex-wrap gap-2 items-end">
                             <div className="flex-1 min-w-[140px]">
-                              <label className="block text-xs font-medium mb-1">Nome</label>
+                              <label htmlFor={`admin-edit-name-${u.id}`} className="block text-xs font-medium mb-1">Nome</label>
                               <input
+                                id={`admin-edit-name-${u.id}`}
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
                                 className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none"
@@ -260,8 +249,9 @@ export function AdminPageClient() {
                               />
                             </div>
                             <div className="flex-1 min-w-[160px]">
-                              <label className="block text-xs font-medium mb-1">E-mail</label>
+                              <label htmlFor={`admin-edit-email-${u.id}`} className="block text-xs font-medium mb-1">E-mail</label>
                               <input
+                                id={`admin-edit-email-${u.id}`}
                                 type="email"
                                 value={editEmail}
                                 onChange={(e) => setEditEmail(e.target.value)}
@@ -270,8 +260,9 @@ export function AdminPageClient() {
                               />
                             </div>
                             <div className="min-w-[140px]">
-                              <label className="block text-xs font-medium mb-1">Nova senha (opcional)</label>
+                              <label htmlFor={`admin-edit-password-${u.id}`} className="block text-xs font-medium mb-1">Nova senha (opcional)</label>
                               <input
+                                id={`admin-edit-password-${u.id}`}
                                 type="password"
                                 value={editPassword}
                                 onChange={(e) => setEditPassword(e.target.value)}
@@ -310,25 +301,7 @@ export function AdminPageClient() {
                             style={{ borderColor: "var(--color-border)" }}
                           >
                             <option value="USER">Usuário</option>
-                            <option value="LEADER">Líder</option>
                             <option value="ADMIN">Administrador</option>
-                          </select>
-                        </td>
-                        <td className="p-4">
-                          <select
-                            value={u.leaderId ?? ""}
-                            onChange={(e) => updateUser(u.id, { leaderId: e.target.value || null })}
-                            className="rounded-lg border px-2 py-1.5 text-xs bg-transparent"
-                            style={{ borderColor: "var(--color-border)" }}
-                          >
-                            <option value="">Nenhum</option>
-                            {users
-                              .filter((l) => l.role !== "USER" && l.id !== u.id)
-                              .map((l) => (
-                                <option key={l.id} value={l.id}>
-                                  {l.name}
-                                </option>
-                              ))}
                           </select>
                         </td>
                         <td className="p-4">

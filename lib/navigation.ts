@@ -2,7 +2,7 @@ export type NavItem = {
   href: string;
   label: string;
   icon: string;
-  roles?: Array<"USER" | "LEADER" | "ADMIN">;
+  roles?: Array<"USER" | "ADMIN">;
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -14,12 +14,12 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/entrega-semanal", label: "Entrega Semanal", icon: "send" },
   { href: "/azure-devops", label: "Azure DevOps", icon: "layers" },
   { href: "/alertas", label: "Alertas", icon: "bell" },
-  { href: "/executivo", label: "Dashbord", icon: "bar-chart-3", roles: ["LEADER", "ADMIN"] },
+  { href: "/executivo", label: "Dashbord", icon: "bar-chart-3", roles: ["ADMIN"] },
   { href: "/auditoria", label: "Auditoria", icon: "shield-check", roles: ["ADMIN"] },
   { href: "/admin", label: "Administração", icon: "settings-2", roles: ["ADMIN"] },
-  { href: "/configuracoes", label: "Configurações", icon: "user-cog", roles: ["USER", "LEADER", "ADMIN"] },
+  { href: "/configuracoes", label: "Configurações", icon: "user-cog", roles: ["USER", "ADMIN"] },
 ];
 
 export function navItemsForRole(role: string) {
-  return NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role as "USER" | "LEADER" | "ADMIN"));
+  return NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role as "USER" | "ADMIN"));
 }
