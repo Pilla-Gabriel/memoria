@@ -85,11 +85,14 @@ app.prepare().then(() => {
     console.log(`> MEMÓRIA rodando em http://localhost:${port} (${dev ? "development" : "production"})`);
   });
 
-  // HTTPS é opcional e só sobe quando há certificado configurado (ver
-  // scripts/setup-https-cert.ps1) — necessário para notificações de área de
-  // trabalho: navegadores só expõem Service Worker/Notification/PushManager
-  // em contexto seguro (HTTPS ou localhost), nunca em HTTP puro por IP.
-  if (process.env.HTTPS_PFX_PATH) {
+  // HTTPS é opcional e só sobe em produção (npm run start) quando há
+  // certificado configurado (ver scripts/setup-https-cert.ps1) — necessário
+  // para notificações de área de trabalho: navegadores só expõem Service
+  // Worker/Notification/PushManager em contexto seguro (HTTPS ou localhost),
+  // nunca em HTTP puro por IP. Gated em `!dev` pra uma instância de dev
+  // preview rodando em paralelo (outra porta) não brigar pela 443 com o
+  // serviço de produção já em execução na mesma máquina.
+  if (!dev && process.env.HTTPS_PFX_PATH) {
     const httpsPort = parseInt(process.env.HTTPS_PORT || "443", 10);
     const httpsServer = createHttpsServer(
       {
