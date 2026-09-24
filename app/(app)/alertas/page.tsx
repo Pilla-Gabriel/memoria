@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Bell,
   Clock,
@@ -168,9 +169,9 @@ export default function AlertasPage() {
     );
 
     return href ? (
-      <a key={alert.id} href={href} className="block hover:bg-black/[0.02]">
+      <Link key={alert.id} href={href} className="block hover:bg-black/[0.02]">
         {content}
-      </a>
+      </Link>
     ) : (
       <div key={alert.id} style={{ cursor: "default" }}>
         {content}

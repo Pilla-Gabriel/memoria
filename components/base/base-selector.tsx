@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { initialsForName } from "@/lib/base-color";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 type AccessibleBase = { id: string; slug: string; name: string; color: string };
 
@@ -57,9 +58,9 @@ export function BaseSelector({ bases }: { bases: AccessibleBase[] }) {
       </p>
 
       {error && (
-        <p className="text-sm rounded-lg px-3 py-2 mb-4" style={{ background: "#fee2e2", color: "#991b1b" }}>
-          {error}
-        </p>
+        <div className="mb-4">
+          <ErrorBanner>{error}</ErrorBanner>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">

@@ -233,6 +233,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
               <input
                 type="number"
                 step="any"
+                aria-label={`Novo valor (${frente.unit})`}
                 value={snapshotValue}
                 onChange={(e) => setSnapshotValue(e.target.value)}
                 placeholder={`Novo valor (${frente.unit})`}
@@ -240,6 +241,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Observação (opcional)"
                 value={snapshotNote}
                 onChange={(e) => setSnapshotNote(e.target.value)}
                 placeholder="Observação (opcional)"
@@ -255,6 +257,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
             </h3>
             <div className="space-y-2">
               <input
+                aria-label="O que foi entregue"
                 value={deliveryTitle}
                 onChange={(e) => setDeliveryTitle(e.target.value)}
                 placeholder="O que foi entregue"
@@ -262,6 +265,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="ID, registro ou link de evidência"
                 value={deliveryEvidence}
                 onChange={(e) => setDeliveryEvidence(e.target.value)}
                 placeholder="ID, registro ou link de evidência"
@@ -277,6 +281,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
             </h3>
             <div className="space-y-2">
               <input
+                aria-label="O que está travado"
                 value={blockerDescription}
                 onChange={(e) => setBlockerDescription(e.target.value)}
                 placeholder="O que está travado"
@@ -284,6 +289,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Impacto"
                 value={blockerImpact}
                 onChange={(e) => setBlockerImpact(e.target.value)}
                 placeholder="Impacto"
@@ -291,6 +297,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Quem pode destravar"
                 value={blockerOwnerName}
                 onChange={(e) => setBlockerOwnerName(e.target.value)}
                 placeholder="Quem pode destravar"

@@ -234,8 +234,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <CalendarClock size={17} /> Solicitar prorrogação
           </h2>
           {atLimit && (
-            <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: "rgba(245,158,11,0.1)", color: "#92400e" }}>
-              Limite de prorrogações atingido. A solicitação será enviada para aprovação de um líder ou administrador.
+            <p
+              className="text-xs mb-3 rounded-lg px-3 py-2"
+              style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-fg)" }}
+            >
+              Limite de prorrogações atingido. A solicitação será enviada para aprovação de um administrador.
             </p>
           )}
           <form onSubmit={requestExtension} className="space-y-3">
@@ -337,6 +340,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <form onSubmit={submitComment} className="flex gap-2">
           <input
+            aria-label="Escreva um comentário"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Escreva um comentário..."

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { dateInputToISOString } from "@/lib/date";
 import { DateQuickPicks } from "@/components/ui/date-quick-picks";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 export type GoalFormValues = {
   title: string;
@@ -189,29 +191,16 @@ export function GoalForm({
 
       <div>
         <label className="block text-sm font-medium mb-1.5">Unidade</label>
-        <div className="flex rounded-xl border overflow-hidden text-sm w-fit mb-2" style={{ borderColor: "var(--color-border)" }}>
-          <button
-            type="button"
-            onClick={() => update("unitType", "PERCENTAGE")}
-            className="px-3.5 py-2 font-medium"
-            style={{
-              background: values.unitType === "PERCENTAGE" ? "var(--color-primary)" : "transparent",
-              color: values.unitType === "PERCENTAGE" ? "#fff" : "var(--color-text)",
-            }}
-          >
-            Porcentagem %
-          </button>
-          <button
-            type="button"
-            onClick={() => update("unitType", "NUMBER")}
-            className="px-3.5 py-2 font-medium"
-            style={{
-              background: values.unitType === "NUMBER" ? "var(--color-primary)" : "transparent",
-              color: values.unitType === "NUMBER" ? "#fff" : "var(--color-text)",
-            }}
-          >
-            Dado (número)
-          </button>
+        <div className="mb-2">
+          <SegmentedControl
+            size="md"
+            options={[
+              { value: "PERCENTAGE" as const, label: "Porcentagem %" },
+              { value: "NUMBER" as const, label: "Dado (número)" },
+            ]}
+            value={values.unitType}
+            onChange={(v) => update("unitType", v)}
+          />
         </div>
         {values.unitType === "NUMBER" && (
           <input
@@ -285,11 +274,7 @@ export function GoalForm({
         />
       </div>
 
-      {error && (
-        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>
-          {error}
-        </p>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <button type="submit" disabled={saving} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">
         {saving ? "Salvando..." : submitLabel}

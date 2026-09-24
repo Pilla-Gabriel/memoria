@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Copy } from "lucide-react";
 import { dateInputToISOString } from "@/lib/date";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export function NovaFrenteForm() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export function NovaFrenteForm() {
       {duplicatedFromName && (
         <p
           className="text-sm rounded-xl px-3.5 py-2.5 flex items-center gap-2"
-          style={{ background: "rgba(6,169,244,0.08)", color: "var(--color-primary-dark)" }}
+          style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
         >
           <Copy size={14} /> Duplicando indicador, unidade e fonte de <strong>{duplicatedFromName}</strong> — ajuste nome, alvo e prazo para o novo período.
         </p>
@@ -214,11 +215,7 @@ export function NovaFrenteForm() {
           </div>
         </div>
 
-        {error && (
-          <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>
-            {error}
-          </p>
-        )}
+        {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <button type="submit" disabled={saving} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">
           {saving ? "Salvando..." : "Criar frente"}

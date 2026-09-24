@@ -23,7 +23,7 @@ export const GET = withBase(async () => {
 
 export const POST = withBase(async (request, _ctx, session, baseId) => {
   if (!isManager(session.user.role)) {
-    return NextResponse.json({ error: "Apenas líderes ou administradores podem criar frentes" }, { status: 403 });
+    return NextResponse.json({ error: "Apenas administradores podem criar frentes" }, { status: 403 });
   }
 
   const body = await request.json();

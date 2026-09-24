@@ -54,7 +54,7 @@ export default async function RevisaoSemanalPage() {
             {pending.map((s) => (
               <Link key={s.id} href={`/checkin/${s.id}`} className="card p-5 flex flex-col gap-3 hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-2">
-                  <span className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}>
+                  <span className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}>
                     <CalendarCheck size={18} />
                   </span>
                   <p className="font-semibold text-sm">{KIND_LABEL[s.kind]}</p>

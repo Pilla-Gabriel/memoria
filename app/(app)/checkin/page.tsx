@@ -61,7 +61,7 @@ export default async function CheckInPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className="w-9 h-9 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}
+                    style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
                   >
                     <MessageCircleQuestion size={18} />
                   </span>

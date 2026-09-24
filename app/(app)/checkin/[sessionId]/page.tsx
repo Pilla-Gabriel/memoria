@@ -155,7 +155,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 <div className="flex items-start gap-2.5">
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}
+                    style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
                   >
                     <MessageCircleQuestion size={15} />
                   </span>
@@ -168,8 +168,8 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 </div>
                 <div className="flex justify-end">
                   <div
-                    className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-sm max-w-[85%] text-white"
-                    style={{ background: "var(--color-primary)" }}
+                    className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-sm max-w-[85%]"
+                    style={{ background: "var(--color-primary)", color: "var(--color-on-primary)" }}
                   >
                     {t.text}
                   </div>
@@ -181,7 +181,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
               <div className="flex items-start gap-2.5">
                 <span
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}
+                  style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
                 >
                   <MessageCircleQuestion size={15} />
                 </span>
@@ -209,6 +209,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 <textarea
                   autoFocus
                   rows={2}
+                  aria-label="Sua resposta"
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
                   onKeyDown={(e) => {
@@ -233,7 +234,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                     title={speech.listening ? "Parar gravação" : "Responder por voz"}
                     className="absolute right-0 top-0 w-11 h-11 rounded-full flex items-center justify-center"
                     style={{
-                      background: speech.listening ? "var(--color-danger)" : "rgba(6,169,244,0.12)",
+                      background: speech.listening ? "var(--color-danger)" : "var(--badge-primary-bg)",
                       color: speech.listening ? "#fff" : "var(--color-primary)",
                     }}
                   >
@@ -367,6 +368,7 @@ function AnswerCard({
             <AlertTriangle size={14} /> Isso parece um compromisso. Transformar em tarefa?
           </div>
           <input
+            aria-label="Título da tarefa"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
@@ -377,12 +379,14 @@ function AnswerCard({
             <input
               type="date"
               required
+              aria-label="Prazo da tarefa"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
               style={{ borderColor: "var(--color-border)" }}
             />
             <select
+              aria-label="Prioridade da tarefa"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="rounded-lg border px-3 py-2 text-sm outline-none bg-transparent"

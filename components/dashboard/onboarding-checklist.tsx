@@ -39,7 +39,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
         <button
           onClick={dismiss}
           disabled={dismissing}
-          className="p-1 rounded-full hover:bg-black/5 shrink-0 disabled:opacity-60"
+          className="p-1 rounded-full hover:bg-black/5 shrink-0 disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
           aria-label="Dispensar"
           title="Dispensar"
         >

@@ -10,7 +10,7 @@ const schema = z.object({ decision: z.enum(["APROVADA", "REJEITADA"]) });
 
 export const PATCH = withBase<{ params: Promise<{ id: string; extId: string }> }>(async (request, ctx, session) => {
   if (!isManager(session.user.role)) {
-    return NextResponse.json({ error: "Apenas líderes ou administradores podem aprovar prorrogações" }, { status: 403 });
+    return NextResponse.json({ error: "Apenas administradores podem aprovar prorrogações" }, { status: 403 });
   }
 
   const { id, extId } = await ctx.params;

@@ -95,7 +95,13 @@ export default function ConfiguracoesPage() {
                 className="flex-1 rounded-lg border px-2.5 py-1.5 text-sm outline-none"
                 style={{ borderColor: "var(--color-border)" }}
               />
-              <button type="submit" disabled={savingName} className="p-1.5 rounded-lg disabled:opacity-60" style={{ color: "var(--color-success)" }} aria-label="Salvar nome">
+              <button
+                type="submit"
+                disabled={savingName}
+                className="p-1.5 rounded-lg disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
+                style={{ color: "var(--color-success)" }}
+                aria-label="Salvar nome"
+              >
                 <Check size={16} />
               </button>
               <button
@@ -105,7 +111,7 @@ export default function ConfiguracoesPage() {
                   setNameError(null);
                   setName(session?.user?.name ?? "");
                 }}
-                className="p-1.5 rounded-lg"
+                className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
                 style={{ color: "var(--color-text-secondary)" }}
                 aria-label="Cancelar"
               >
@@ -119,7 +125,7 @@ export default function ConfiguracoesPage() {
               </p>
               <button
                 onClick={() => setEditingName(true)}
-                className="p-1 rounded-lg"
+                className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
                 style={{ color: "var(--color-primary)" }}
                 aria-label="Editar nome"
               >
@@ -197,8 +203,8 @@ export default function ConfiguracoesPage() {
             <p
               className="text-sm rounded-lg px-3 py-2"
               style={{
-                background: message.type === "ok" ? "rgba(34,197,94,0.1)" : "#fee2e2",
-                color: message.type === "ok" ? "#166534" : "#991b1b",
+                background: message.type === "ok" ? "var(--badge-success-bg)" : "var(--badge-danger-bg)",
+                color: message.type === "ok" ? "var(--badge-success-fg)" : "var(--badge-danger-fg)",
               }}
             >
               {message.text}

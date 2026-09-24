@@ -317,6 +317,7 @@ export function AdminPageClient() {
                           <button
                             onClick={() => startEditUser(u)}
                             aria-label="Editar"
+                            className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
                             style={{ color: "var(--color-primary)" }}
                           >
                             <Pencil size={14} />

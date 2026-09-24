@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DateQuickPicks } from "@/components/ui/date-quick-picks";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export type TaskFormValues = {
   title: string;
@@ -127,11 +128,7 @@ export function TaskForm({
         </p>
       </div>
 
-      {error && (
-        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>
-          {error}
-        </p>
-      )}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
 
       <button type="submit" disabled={saving} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">
         {saving ? "Salvando..." : submitLabel}
