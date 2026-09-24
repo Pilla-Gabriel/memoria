@@ -126,7 +126,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
                 <button
                   onClick={() => mirror(item)}
                   className="text-xs font-semibold"
-                  style={{ color: "var(--color-primary)" }}
+                  style={{ color: "var(--badge-primary-fg)" }}
                   title="Descarta as personalizações de todos os usuários para este item, revertendo todo mundo ao padrão atual"
                 >
                   Aplicar p/ todos
@@ -143,7 +143,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
                 <button
                   onClick={() => remove(item)}
                   className="text-xs font-semibold"
-                  style={{ color: "var(--color-danger)" }}
+                  style={{ color: "var(--badge-danger-fg)" }}
                 >
                   Remover
                 </button>

@@ -108,7 +108,7 @@ export default async function EntregaSemanalPage() {
           <ul className="space-y-1.5 text-sm">
             {frenteAlerts.map((a) => (
               <li key={a.id} className="flex items-center gap-2">
-                <AlertTriangle size={14} style={{ color: "var(--color-warning)" }} />
+                <AlertTriangle size={14} style={{ color: "var(--badge-warning-fg)" }} />
                 {a.message}
               </li>
             ))}
@@ -156,7 +156,7 @@ export default async function EntregaSemanalPage() {
                     <SourceLabel source={c.frente.source} detail={c.frente.sourceDetail} linkify={false} />
                   </span>
                   {c.openBlockers.length > 0 && (
-                    <span style={{ color: "var(--color-danger)" }}>{c.openBlockers.length} bloqueio(s)</span>
+                    <span style={{ color: "var(--badge-danger-fg)" }}>{c.openBlockers.length} bloqueio(s)</span>
                   )}
                 </div>
               </Link>
@@ -189,7 +189,7 @@ export default async function EntregaSemanalPage() {
                 </p>
                 <ReportStatusBadge status={r.status} />
               </div>
-              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

@@ -346,7 +346,7 @@ export function AzureSprintBreakdown() {
     return (
       <div className="card p-5">
         {header}
-        <p className="text-sm" style={{ color: "var(--color-danger)" }}>
+        <p className="text-sm" style={{ color: "var(--badge-danger-fg)" }}>
           {error}
         </p>
       </div>
@@ -410,7 +410,7 @@ export function AzureSprintBreakdown() {
                 setAssigneeFilter(ALL);
               }}
               className="text-xs font-semibold"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--badge-primary-fg)" }}
             >
               Limpar filtros
             </button>

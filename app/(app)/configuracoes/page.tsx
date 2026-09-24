@@ -99,7 +99,7 @@ export default function ConfiguracoesPage() {
                 type="submit"
                 disabled={savingName}
                 className="p-1.5 rounded-lg disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
-                style={{ color: "var(--color-success)" }}
+                style={{ color: "var(--badge-success-fg)" }}
                 aria-label="Salvar nome"
               >
                 <Check size={16} />
@@ -126,7 +126,7 @@ export default function ConfiguracoesPage() {
               <button
                 onClick={() => setEditingName(true)}
                 className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
-                style={{ color: "var(--color-primary)" }}
+                style={{ color: "var(--badge-primary-fg)" }}
                 aria-label="Editar nome"
               >
                 <Pencil size={14} />
@@ -134,7 +134,7 @@ export default function ConfiguracoesPage() {
             </div>
           )}
           {nameError && (
-            <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+            <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>
               {nameError}
             </p>
           )}

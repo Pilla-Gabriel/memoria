@@ -98,7 +98,7 @@ export function PushOptIn() {
           : "Receba alertas direto na área de trabalho, mesmo com o app fechado — em vez de depender de abrir o sininho."}
       </p>
       {error && (
-        <p className="text-xs" style={{ color: "var(--color-danger)" }}>
+        <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>
           {error}
         </p>
       )}

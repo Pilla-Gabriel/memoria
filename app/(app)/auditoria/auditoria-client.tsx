@@ -43,7 +43,7 @@ export function AuditoriaPageClient() {
       .catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <p style={{ color: "var(--color-danger)" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--badge-danger-fg)" }}>{error}</p>;
 
   if (logs === null) {
     return (

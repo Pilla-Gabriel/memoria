@@ -119,7 +119,7 @@ export default async function DashboardPage() {
 
       {total === 0 && metasTotal === 0 ? (
         <div className="card p-8 text-center flex flex-col items-center gap-3">
-          <ListChecks size={28} style={{ color: "var(--color-primary)" }} />
+          <ListChecks size={28} style={{ color: "var(--badge-primary-fg)" }} />
           <h2 className="font-semibold">Você ainda não tem tarefas nem metas por aqui</h2>
           <p className="text-sm max-w-sm" style={{ color: "var(--color-text-secondary)" }}>
             Comece respondendo um check-in ou criando a primeira tarefa — os indicadores deste painel aparecem
@@ -148,7 +148,7 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-end justify-between mb-4 pb-3 border-b" style={{ borderColor: "var(--color-text)" }}>
             <h2 className="text-xl font-bold uppercase">Próximos vencimentos</h2>
-            <Link href="/tarefas" className="text-xs font-semibold" style={{ color: "var(--color-primary-dark)" }}>
+            <Link href="/tarefas" className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
               Ver todas
             </Link>
           </div>
@@ -191,19 +191,19 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-end justify-between mb-4 pb-3 border-b" style={{ borderColor: "var(--color-text)" }}>
             <h2 className="text-xl font-bold uppercase">Minhas metas</h2>
-            <Link href="/metas" className="text-xs font-semibold" style={{ color: "var(--color-primary-dark)" }}>
+            <Link href="/metas" className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
               Ver todas
             </Link>
           </div>
           <div className="grid grid-cols-3 border divide-x border-[var(--color-border)] divide-[var(--color-border)]">
             <Link href="/metas" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
-              <p className="font-display font-bold text-3xl" style={{ color: "var(--color-primary-dark)" }}>{metasTotal}</p>
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-primary-fg)" }}>{metasTotal}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>
                 Total
               </p>
             </Link>
             <Link href="/metas?status=ATINGIDA" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
-              <p className="font-display font-bold text-3xl" style={{ color: "var(--color-success)" }}>
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-success-fg)" }}>
                 {metasAtingidas}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>
@@ -211,7 +211,7 @@ export default async function DashboardPage() {
               </p>
             </Link>
             <Link href="/metas?status=EM_RISCO" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
-              <p className="font-display font-bold text-3xl" style={{ color: "var(--color-warning)" }}>
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-warning-fg)" }}>
                 {metasEmRisco}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>

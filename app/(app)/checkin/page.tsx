@@ -47,7 +47,7 @@ export default async function CheckInPage() {
         </h2>
         {pending.length === 0 ? (
           <div className="card p-6 text-sm flex items-center gap-3" style={{ color: "var(--color-text-secondary)" }}>
-            <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
+            <CheckCircle2 size={18} style={{ color: "var(--badge-success-fg)" }} />
             Nenhum check-in pendente no momento. Muito bem!
           </div>
         ) : (
@@ -61,7 +61,7 @@ export default async function CheckInPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className="w-9 h-9 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
+                    style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
                   >
                     <MessageCircleQuestion size={18} />
                   </span>
@@ -100,7 +100,7 @@ export default async function CheckInPage() {
                   </p>
                 </div>
               </div>
-              <Link href={`/checkin/${s.id}`} className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+              <Link href={`/checkin/${s.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

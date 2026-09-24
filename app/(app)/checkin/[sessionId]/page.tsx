@@ -129,7 +129,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <Link href="/checkin" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/checkin" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <h1 className="text-2xl font-bold mt-2">{KIND_LABEL[session.kind]}</h1>
@@ -137,7 +137,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
 
       {noActiveQuestions ? (
         <div className="card p-5 flex items-start gap-3 text-sm" style={{ background: "rgba(239,68,68,0.08)" }}>
-          <AlertTriangle size={18} style={{ color: "var(--color-danger)" }} className="shrink-0 mt-0.5" />
+          <AlertTriangle size={18} style={{ color: "var(--badge-danger-fg)" }} className="shrink-0 mt-0.5" />
           <span>
             Você não tem nenhuma pergunta ativa para este tipo de check-in, então não há o que responder aqui. Ative
             ou crie ao menos uma em{" "}
@@ -155,7 +155,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 <div className="flex items-start gap-2.5">
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
+                    style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
                   >
                     <MessageCircleQuestion size={15} />
                   </span>
@@ -181,7 +181,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
               <div className="flex items-start gap-2.5">
                 <span
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: "var(--badge-primary-bg)", color: "var(--color-primary)" }}
+                  style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
                 >
                   <MessageCircleQuestion size={15} />
                 </span>
@@ -277,7 +277,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
           >
             {pendingConversion.length ? (
               <>
-                <Sparkles size={18} style={{ color: "var(--color-warning)" }} />
+                <Sparkles size={18} style={{ color: "var(--badge-warning-fg)" }} />
                 <span>
                   {pendingConversion.length} resposta(s) parecem compromissos. Defina um prazo para transformá-las em
                   tarefa.
@@ -285,7 +285,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
               </>
             ) : (
               <>
-                <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
+                <CheckCircle2 size={18} style={{ color: "var(--badge-success-fg)" }} />
                 <span>Check-in concluído. Nenhuma pendência de conversão.</span>
               </>
             )}
@@ -356,7 +356,7 @@ function AnswerCard({
         <Link
           href={`/tarefas/${answer.convertedTaskId}`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold"
-          style={{ color: "var(--color-success)" }}
+          style={{ color: "var(--badge-success-fg)" }}
         >
           <CheckCircle2 size={14} /> Tarefa criada — ver detalhes
         </Link>
@@ -364,7 +364,7 @@ function AnswerCard({
 
       {needsAction && (
         <form onSubmit={handleCreateTask} className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: "var(--color-border)" }}>
-          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--color-warning)" }}>
+          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--badge-warning-fg)" }}>
             <AlertTriangle size={14} /> Isso parece um compromisso. Transformar em tarefa?
           </div>
           <input
@@ -398,7 +398,7 @@ function AnswerCard({
               <option value="URGENTE">Urgente</option>
             </select>
           </div>
-          {error && <p className="text-xs" style={{ color: "var(--color-danger)" }}>{error}</p>}
+          {error && <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="btn-primary flex-1 py-2 text-xs disabled:opacity-60">
               {saving ? "Criando..." : "Criar tarefa"}

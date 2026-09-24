@@ -191,7 +191,7 @@ function BaseIndicator({
                     </span>
                     <span className="flex-1">{base.name}</span>
                     {base.id === activeBase.id && (
-                      <span className="text-[10px] font-semibold" style={{ color: "var(--color-primary)" }}>
+                      <span className="text-[10px] font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                         atual
                       </span>
                     )}

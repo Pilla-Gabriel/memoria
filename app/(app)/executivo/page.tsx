@@ -98,7 +98,7 @@ export default function ExecutivoPage() {
     };
   }, []);
 
-  if (error) return <p style={{ color: "var(--color-danger)" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--badge-danger-fg)" }}>{error}</p>;
   if (!data) return <ExecutivoSkeleton />;
 
   const chartData = data.statusCounts.map((s) => ({ name: STATUS_LABEL[s.status] ?? s.status, total: s.count }));
@@ -132,14 +132,14 @@ export default function ExecutivoPage() {
           <span style={{ color: "var(--color-text-secondary)", fontWeight: 400 }}>
             · {data.entregaSemanal.totalFrentes} frente(s)
             {data.entregaSemanal.frentesEmRisco > 0 && (
-              <span style={{ color: "var(--color-danger)" }}> · {data.entregaSemanal.frentesEmRisco} em risco</span>
+              <span style={{ color: "var(--badge-danger-fg)" }}> · {data.entregaSemanal.frentesEmRisco} em risco</span>
             )}
             {data.entregaSemanal.openBlockers > 0 && (
-              <span style={{ color: "var(--color-warning)" }}> · {data.entregaSemanal.openBlockers} bloqueio(s)</span>
+              <span style={{ color: "var(--badge-warning-fg)" }}> · {data.entregaSemanal.openBlockers} bloqueio(s)</span>
             )}
           </span>
         </span>
-        <span className="text-xs font-semibold shrink-0" style={{ color: "var(--color-primary)" }}>
+        <span className="text-xs font-semibold shrink-0" style={{ color: "var(--badge-primary-fg)" }}>
           Ver tudo →
         </span>
       </Link>
@@ -162,7 +162,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-success)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-success-fg)" }}>
                   {u.completedCount} concluídas
                 </span>
               </li>
@@ -181,7 +181,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-danger)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-danger-fg)" }}>
                   {u.countDelays} atrasos · {u.classification}
                 </span>
               </li>
@@ -200,7 +200,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-danger)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-danger-fg)" }}>
                   {u.ignoredCheckinsCount} ignorado(s)
                 </span>
               </li>

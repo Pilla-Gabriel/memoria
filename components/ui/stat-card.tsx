@@ -16,12 +16,19 @@ export function StatCard({
   tone?: "default" | "success" | "warning" | "danger" | "primary";
   href?: string;
 }) {
+  // --color-primary/-success/-warning/-danger são calibradas pra
+  // preenchimento (barra de progresso, ponto de status), não pra texto —
+  // em claro ficam abaixo de 3:1, e --color-primary-dark especificamente
+  // fica ilegível no dark mode (não tem override próprio pro tema escuro,
+  // vira navy-escuro sobre fundo navy-escuro). --badge-*-fg é a mesma
+  // família de cor escurecida e com contraparte de dark mode, já usada
+  // nos badges de status — segura nos dois temas.
   const toneFg: Record<string, string> = {
     default: "var(--color-text-secondary)",
-    primary: "var(--color-primary-dark)",
-    success: "var(--color-success)",
-    warning: "var(--color-warning)",
-    danger: "var(--color-danger)",
+    primary: "var(--badge-primary-fg)",
+    success: "var(--badge-success-fg)",
+    warning: "var(--badge-warning-fg)",
+    danger: "var(--badge-danger-fg)",
   };
 
   const content = (
@@ -31,7 +38,7 @@ export function StatCard({
       </span>
       <p
         className="font-display font-bold mt-1.5 leading-none"
-        style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", color: "var(--color-primary-dark)" }}
+        style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", color: "var(--badge-primary-fg)" }}
       >
         {value}
       </p>

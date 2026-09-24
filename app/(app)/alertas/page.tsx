@@ -189,7 +189,7 @@ export default function AlertasPage() {
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Alertas</h1>
-        <button onClick={markAllRead} className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <button onClick={markAllRead} className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           Marcar todos como lidos
         </button>
       </div>

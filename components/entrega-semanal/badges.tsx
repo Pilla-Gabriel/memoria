@@ -34,7 +34,7 @@ export function SourceLabel({
         target="_blank"
         rel="noreferrer"
         className="hover:underline"
-        style={{ color: "var(--color-primary)" }}
+        style={{ color: "var(--badge-primary-fg)" }}
       >
         {label} ↗
       </a>

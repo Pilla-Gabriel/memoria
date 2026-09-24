@@ -154,13 +154,13 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <Link
           href={`/entrega-semanal/frentes/nova?duplicateFrom=${id}`}
           className="text-sm font-semibold flex items-center gap-1.5"
-          style={{ color: "var(--color-primary)" }}
+          style={{ color: "var(--badge-primary-fg)" }}
         >
           <Copy size={15} /> Duplicar esta frente
         </Link>
@@ -209,7 +209,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
               onClick={syncAzure}
               disabled={syncing}
               className="text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--badge-primary-fg)" }}
             >
               <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
               {syncing ? "Sincronizando..." : "Sincronizar com Azure DevOps"}
@@ -367,7 +367,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                   <button
                     onClick={() => resolveBlocker(b.id, b.status)}
                     className="text-xs font-semibold"
-                    style={{ color: "var(--color-primary)" }}
+                    style={{ color: "var(--badge-primary-fg)" }}
                   >
                     {b.status === "ABERTO" ? "Marcar resolvido" : "Reabrir"}
                   </button>

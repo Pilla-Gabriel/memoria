@@ -134,18 +134,18 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <div className="flex items-center gap-3">
-          <Link href={`/metas/${id}/editar`} className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--color-primary)" }}>
+          <Link href={`/metas/${id}/editar`} className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--badge-primary-fg)" }}>
             <Pencil size={15} /> Editar
           </Link>
           <button
             onClick={handleDeleteGoal}
             disabled={deleting}
             className="text-sm font-semibold flex items-center gap-1.5 disabled:opacity-60"
-            style={{ color: "var(--color-danger)" }}
+            style={{ color: "var(--badge-danger-fg)" }}
           >
             <Trash2 size={15} /> Excluir
           </button>
@@ -336,7 +336,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                       onClick={() => startEditProgress(p)}
                       aria-label="Editar"
                       className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
-                      style={{ color: "var(--color-primary)" }}
+                      style={{ color: "var(--badge-primary-fg)" }}
                     >
                       <Pencil size={14} />
                     </button>
@@ -344,7 +344,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                       onClick={() => deleteProgress(p.id)}
                       aria-label="Excluir"
                       className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
-                      style={{ color: "var(--color-danger)" }}
+                      style={{ color: "var(--badge-danger-fg)" }}
                     >
                       <Trash2 size={14} />
                     </button>

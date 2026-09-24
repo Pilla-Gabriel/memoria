@@ -57,7 +57,7 @@ function CategoryForm({ onSubmit }: { onSubmit: (data: Record<string, unknown>) 
         Adicionar
       </button>
       {error && (
-        <p className="w-full text-xs" style={{ color: "var(--color-danger)" }}>
+        <p className="w-full text-xs" style={{ color: "var(--badge-danger-fg)" }}>
           {error}
         </p>
       )}
