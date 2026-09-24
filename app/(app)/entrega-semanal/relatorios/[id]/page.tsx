@@ -86,7 +86,7 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <a
@@ -141,7 +141,7 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
       <div className="card p-6">
         <h2 className="font-semibold mb-1">Plano semanal</h2>
         {autoFilled && (
-          <p className="text-xs flex items-center gap-1.5 mb-3" style={{ color: "var(--color-primary)" }}>
+          <p className="text-xs flex items-center gap-1.5 mb-3" style={{ color: "var(--badge-primary-fg)" }}>
             <Sparkles size={13} /> Rascunho gerado a partir do resumo das frentes — revise antes de publicar.
           </p>
         )}

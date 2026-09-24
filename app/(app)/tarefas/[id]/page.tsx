@@ -147,7 +147,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
       </div>
@@ -179,7 +179,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               onClick={handleDelete}
               disabled={deleting}
               className="p-2 rounded-lg border disabled:opacity-60"
-              style={{ borderColor: "var(--color-border)", color: "var(--color-danger)" }}
+              style={{ borderColor: "var(--color-border)", color: "var(--badge-danger-fg)" }}
               aria-label="Excluir tarefa"
               title="Excluir tarefa"
             >
@@ -234,8 +234,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <CalendarClock size={17} /> Solicitar prorrogação
           </h2>
           {atLimit && (
-            <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: "rgba(245,158,11,0.1)", color: "#92400e" }}>
-              Limite de prorrogações atingido. A solicitação será enviada para aprovação de um líder ou administrador.
+            <p
+              className="text-xs mb-3 rounded-lg px-3 py-2"
+              style={{ background: "var(--badge-warning-bg)", color: "var(--badge-warning-fg)" }}
+            >
+              Limite de prorrogações atingido. A solicitação será enviada para aprovação de um administrador.
             </p>
           )}
           <form onSubmit={requestExtension} className="space-y-3">
@@ -256,7 +259,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
               style={{ borderColor: "var(--color-border)" }}
             />
-            {extensionError && <p className="text-xs" style={{ color: "var(--color-danger)" }}>{extensionError}</p>}
+            {extensionError && <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>{extensionError}</p>}
             <button type="submit" className="btn-primary px-4 py-2 text-sm">
               Solicitar novo prazo
             </button>
@@ -306,7 +309,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         <ul className="space-y-1.5 text-sm">
           {task.attachments.map((a) => (
             <li key={a.id}>
-              <a href={a.path} target="_blank" rel="noreferrer" className="hover:underline" style={{ color: "var(--color-primary)" }}>
+              <a href={a.path} target="_blank" rel="noreferrer" className="hover:underline" style={{ color: "var(--badge-primary-fg)" }}>
                 {a.filename}
               </a>{" "}
               <span style={{ color: "var(--color-text-secondary)" }}>· {a.uploadedBy.name}</span>
@@ -337,6 +340,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         <form onSubmit={submitComment} className="flex gap-2">
           <input
+            aria-label="Escreva um comentário"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Escreva um comentário..."

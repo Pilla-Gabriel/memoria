@@ -221,7 +221,7 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
       <Link
         href="/azure-devops"
         className="text-sm font-semibold flex items-center gap-1 mt-5"
-        style={{ color: "var(--color-primary)" }}
+        style={{ color: "var(--badge-primary-fg)" }}
       >
         Ver detalhamento por sprint e usuário <ArrowRight size={14} />
       </Link>

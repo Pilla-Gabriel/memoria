@@ -40,7 +40,7 @@ export default function NovaTarefaPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <h1 className="text-2xl font-bold mt-2">Nova tarefa</h1>

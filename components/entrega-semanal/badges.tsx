@@ -1,3 +1,5 @@
+import { Badge, type BadgeTone } from "@/components/ui/badge";
+
 const SOURCE_LABEL: Record<string, string> = {
   AZURE_DEVOPS: "Azure DevOps",
   TEAMS: "Teams",
@@ -7,39 +9,12 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export function RiskBadge({ isAtRisk }: { isAtRisk: boolean }) {
-  if (!isAtRisk) {
-    return (
-      <span
-        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-        style={{ background: "rgba(34,197,94,0.12)", color: "var(--badge-success-fg)" }}
-      >
-        No prazo
-      </span>
-    );
-  }
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{ background: "rgba(239,68,68,0.12)", color: "var(--badge-danger-fg)" }}
-    >
-      Em risco
-    </span>
-  );
+  return <Badge tone={isAtRisk ? "danger" : "success"}>{isAtRisk ? "Em risco" : "No prazo"}</Badge>;
 }
 
 export function BlockerStatusBadge({ status }: { status: string }) {
   const open = status === "ABERTO";
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{
-        background: open ? "rgba(239,68,68,0.12)" : "rgba(34,197,94,0.12)",
-        color: open ? "var(--badge-danger-fg)" : "var(--badge-success-fg)",
-      }}
-    >
-      {open ? "Aberto" : "Resolvido"}
-    </span>
-  );
+  return <Badge tone={open ? "danger" : "success"}>{open ? "Aberto" : "Resolvido"}</Badge>;
 }
 
 export function SourceLabel({
@@ -59,7 +34,7 @@ export function SourceLabel({
         target="_blank"
         rel="noreferrer"
         className="hover:underline"
-        style={{ color: "var(--color-primary)" }}
+        style={{ color: "var(--badge-primary-fg)" }}
       >
         {label} ↗
       </a>
@@ -73,42 +48,30 @@ export function SourceLabel({
   );
 }
 
-const STATE_CATEGORY_STYLE: Record<string, { background: string; color: string }> = {
-  Completed: { background: "rgba(34,197,94,0.12)", color: "#166534" },
-  InProgress: { background: "rgba(6,169,244,0.12)", color: "#075985" },
-  Resolved: { background: "rgba(20,184,166,0.12)", color: "#115e59" },
-  Proposed: { background: "rgba(148,163,184,0.16)", color: "#334155" },
-  Removed: { background: "rgba(239,68,68,0.12)", color: "#991b1b" },
-  Other: { background: "rgba(148,163,184,0.16)", color: "#334155" },
-};
-
 // Cor por categoria do estado (Proposed/InProgress/Resolved/Completed/Removed),
 // vinda de /_apis/wit/workitemtypes/{tipo}/states — nunca do texto do estado
 // em si, já que o nome exibido (`state`) varia por tipo/processo mas a
-// categoria é estável.
+// categoria é estável. "Resolved" usa o tom "info" (só ele usa) porque não
+// tem equivalente semântico em primary/success/warning/danger.
+const STATE_CATEGORY_TONE: Record<string, BadgeTone> = {
+  Completed: "success",
+  InProgress: "primary",
+  Resolved: "info",
+  Proposed: "neutral",
+  Removed: "danger",
+  Other: "neutral",
+};
+
 export function StateCategoryBadge({ state, stateCategory }: { state: string; stateCategory: string }) {
-  const style = STATE_CATEGORY_STYLE[stateCategory] ?? STATE_CATEGORY_STYLE.Other;
+  const tone = STATE_CATEGORY_TONE[stateCategory] ?? STATE_CATEGORY_TONE.Other;
   return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-      style={style}
-    >
+    <Badge tone={tone} size="compact">
       {state}
-    </span>
+    </Badge>
   );
 }
 
 export function ReportStatusBadge({ status }: { status: string }) {
   const published = status === "PUBLICADO";
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{
-        background: published ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)",
-        color: published ? "var(--badge-success-fg)" : "var(--badge-warning-fg)",
-      }}
-    >
-      {published ? "Publicado" : "Rascunho"}
-    </span>
-  );
+  return <Badge tone={published ? "success" : "warning"}>{published ? "Publicado" : "Rascunho"}</Badge>;
 }

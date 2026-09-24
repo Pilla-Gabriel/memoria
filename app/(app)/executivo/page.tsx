@@ -98,7 +98,7 @@ export default function ExecutivoPage() {
     };
   }, []);
 
-  if (error) return <p style={{ color: "var(--color-danger)" }}>{error}</p>;
+  if (error) return <p style={{ color: "var(--badge-danger-fg)" }}>{error}</p>;
   if (!data) return <ExecutivoSkeleton />;
 
   const chartData = data.statusCounts.map((s) => ({ name: STATUS_LABEL[s.status] ?? s.status, total: s.count }));
@@ -110,7 +110,7 @@ export default function ExecutivoPage() {
         <p style={{ color: "var(--color-text-secondary)" }}>Indicadores consolidados de produtividade e accountability.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 border divide-x divide-y border-[var(--color-border)] divide-[var(--color-border)]">
         <StatCard label="Taxa de conclusão" value={`${data.taxaConclusao}%`} icon={TrendingUp} tone="success" href="/tarefas?status=CONCLUIDA&scope=team" />
         <StatCard label="Taxa de atraso" value={`${data.taxaAtraso}%`} icon={AlertOctagon} tone="danger" href="/tarefas?status=ATRASADA&scope=team" />
         <StatCard label="Tempo médio de conclusão" value={`${data.avgCompletionDays}d`} icon={Clock} tone="primary" href="/tarefas?status=CONCLUIDA&scope=team" />
@@ -132,14 +132,14 @@ export default function ExecutivoPage() {
           <span style={{ color: "var(--color-text-secondary)", fontWeight: 400 }}>
             · {data.entregaSemanal.totalFrentes} frente(s)
             {data.entregaSemanal.frentesEmRisco > 0 && (
-              <span style={{ color: "var(--color-danger)" }}> · {data.entregaSemanal.frentesEmRisco} em risco</span>
+              <span style={{ color: "var(--badge-danger-fg)" }}> · {data.entregaSemanal.frentesEmRisco} em risco</span>
             )}
             {data.entregaSemanal.openBlockers > 0 && (
-              <span style={{ color: "var(--color-warning)" }}> · {data.entregaSemanal.openBlockers} bloqueio(s)</span>
+              <span style={{ color: "var(--badge-warning-fg)" }}> · {data.entregaSemanal.openBlockers} bloqueio(s)</span>
             )}
           </span>
         </span>
-        <span className="text-xs font-semibold shrink-0" style={{ color: "var(--color-primary)" }}>
+        <span className="text-xs font-semibold shrink-0" style={{ color: "var(--badge-primary-fg)" }}>
           Ver tudo →
         </span>
       </Link>
@@ -162,7 +162,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-success)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-success-fg)" }}>
                   {u.completedCount} concluídas
                 </span>
               </li>
@@ -181,7 +181,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-danger)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-danger-fg)" }}>
                   {u.countDelays} atrasos · {u.classification}
                 </span>
               </li>
@@ -200,7 +200,7 @@ export default function ExecutivoPage() {
                 <span>
                   {i + 1}. {u.name}
                 </span>
-                <span className="font-semibold" style={{ color: "var(--color-danger)" }}>
+                <span className="font-semibold" style={{ color: "var(--badge-danger-fg)" }}>
                   {u.ignoredCheckinsCount} ignorado(s)
                 </span>
               </li>

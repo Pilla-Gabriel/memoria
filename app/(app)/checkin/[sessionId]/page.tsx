@@ -129,7 +129,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <Link href="/checkin" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/checkin" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <h1 className="text-2xl font-bold mt-2">{KIND_LABEL[session.kind]}</h1>
@@ -137,7 +137,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
 
       {noActiveQuestions ? (
         <div className="card p-5 flex items-start gap-3 text-sm" style={{ background: "rgba(239,68,68,0.08)" }}>
-          <AlertTriangle size={18} style={{ color: "var(--color-danger)" }} className="shrink-0 mt-0.5" />
+          <AlertTriangle size={18} style={{ color: "var(--badge-danger-fg)" }} className="shrink-0 mt-0.5" />
           <span>
             Você não tem nenhuma pergunta ativa para este tipo de check-in, então não há o que responder aqui. Ative
             ou crie ao menos uma em{" "}
@@ -155,7 +155,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 <div className="flex items-start gap-2.5">
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}
+                    style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
                   >
                     <MessageCircleQuestion size={15} />
                   </span>
@@ -168,8 +168,8 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 </div>
                 <div className="flex justify-end">
                   <div
-                    className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-sm max-w-[85%] text-white"
-                    style={{ background: "var(--color-primary)" }}
+                    className="rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-sm max-w-[85%]"
+                    style={{ background: "var(--color-primary)", color: "var(--color-on-primary)" }}
                   >
                     {t.text}
                   </div>
@@ -181,7 +181,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
               <div className="flex items-start gap-2.5">
                 <span
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(6,169,244,0.12)", color: "var(--color-primary)" }}
+                  style={{ background: "var(--badge-primary-bg)", color: "var(--badge-primary-fg)" }}
                 >
                   <MessageCircleQuestion size={15} />
                 </span>
@@ -209,6 +209,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 <textarea
                   autoFocus
                   rows={2}
+                  aria-label="Sua resposta"
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
                   onKeyDown={(e) => {
@@ -233,7 +234,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                     title={speech.listening ? "Parar gravação" : "Responder por voz"}
                     className="absolute right-0 top-0 w-11 h-11 rounded-full flex items-center justify-center"
                     style={{
-                      background: speech.listening ? "var(--color-danger)" : "rgba(6,169,244,0.12)",
+                      background: speech.listening ? "var(--color-danger)" : "var(--badge-primary-bg)",
                       color: speech.listening ? "#fff" : "var(--color-primary)",
                     }}
                   >
@@ -276,7 +277,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
           >
             {pendingConversion.length ? (
               <>
-                <Sparkles size={18} style={{ color: "var(--color-warning)" }} />
+                <Sparkles size={18} style={{ color: "var(--badge-warning-fg)" }} />
                 <span>
                   {pendingConversion.length} resposta(s) parecem compromissos. Defina um prazo para transformá-las em
                   tarefa.
@@ -284,7 +285,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
               </>
             ) : (
               <>
-                <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
+                <CheckCircle2 size={18} style={{ color: "var(--badge-success-fg)" }} />
                 <span>Check-in concluído. Nenhuma pendência de conversão.</span>
               </>
             )}
@@ -355,7 +356,7 @@ function AnswerCard({
         <Link
           href={`/tarefas/${answer.convertedTaskId}`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold"
-          style={{ color: "var(--color-success)" }}
+          style={{ color: "var(--badge-success-fg)" }}
         >
           <CheckCircle2 size={14} /> Tarefa criada — ver detalhes
         </Link>
@@ -363,10 +364,11 @@ function AnswerCard({
 
       {needsAction && (
         <form onSubmit={handleCreateTask} className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: "var(--color-border)" }}>
-          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--color-warning)" }}>
+          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--badge-warning-fg)" }}>
             <AlertTriangle size={14} /> Isso parece um compromisso. Transformar em tarefa?
           </div>
           <input
+            aria-label="Título da tarefa"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
@@ -377,12 +379,14 @@ function AnswerCard({
             <input
               type="date"
               required
+              aria-label="Prazo da tarefa"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
               style={{ borderColor: "var(--color-border)" }}
             />
             <select
+              aria-label="Prioridade da tarefa"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="rounded-lg border px-3 py-2 text-sm outline-none bg-transparent"
@@ -394,7 +398,7 @@ function AnswerCard({
               <option value="URGENTE">Urgente</option>
             </select>
           </div>
-          {error && <p className="text-xs" style={{ color: "var(--color-danger)" }}>{error}</p>}
+          {error && <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="btn-primary flex-1 py-2 text-xs disabled:opacity-60">
               {saving ? "Criando..." : "Criar tarefa"}

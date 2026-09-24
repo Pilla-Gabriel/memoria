@@ -8,7 +8,7 @@ import { withBase } from "@/lib/with-base";
 
 export const GET = withBase(async (_request, _ctx, session) => {
   if (!isManager(session.user.role)) {
-    return NextResponse.json({ error: "Acesso restrito a líderes e administradores" }, { status: 403 });
+    return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
   }
 
   const visibleIds = await getVisibleUserIds(session.user);

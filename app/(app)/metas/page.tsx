@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { GoalStatusBadge, GoalTypeLabel } from "@/components/goals/goal-status-badge";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type Goal = {
   id: string;
@@ -53,22 +54,14 @@ function MetasList() {
       </div>
 
       {canSeeTeam && (
-        <div className="flex rounded-xl border overflow-hidden text-sm w-fit" style={{ borderColor: "var(--color-border)" }}>
-          <button
-            onClick={() => setScope("mine")}
-            className="px-3 py-2 font-medium"
-            style={{ background: scope === "mine" ? "var(--color-primary)" : "transparent", color: scope === "mine" ? "#fff" : "var(--color-text)" }}
-          >
-            Minhas
-          </button>
-          <button
-            onClick={() => setScope("team")}
-            className="px-3 py-2 font-medium"
-            style={{ background: scope === "team" ? "var(--color-primary)" : "transparent", color: scope === "team" ? "#fff" : "var(--color-text)" }}
-          >
-            Todas
-          </button>
-        </div>
+        <SegmentedControl
+          options={[
+            { value: "mine" as const, label: "Minhas" },
+            { value: "team" as const, label: "Todas" },
+          ]}
+          value={scope}
+          onChange={setScope}
+        />
       )}
 
       {loading ? (

@@ -154,13 +154,13 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <Link
           href={`/entrega-semanal/frentes/nova?duplicateFrom=${id}`}
           className="text-sm font-semibold flex items-center gap-1.5"
-          style={{ color: "var(--color-primary)" }}
+          style={{ color: "var(--badge-primary-fg)" }}
         >
           <Copy size={15} /> Duplicar esta frente
         </Link>
@@ -209,7 +209,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
               onClick={syncAzure}
               disabled={syncing}
               className="text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--badge-primary-fg)" }}
             >
               <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
               {syncing ? "Sincronizando..." : "Sincronizar com Azure DevOps"}
@@ -233,6 +233,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
               <input
                 type="number"
                 step="any"
+                aria-label={`Novo valor (${frente.unit})`}
                 value={snapshotValue}
                 onChange={(e) => setSnapshotValue(e.target.value)}
                 placeholder={`Novo valor (${frente.unit})`}
@@ -240,6 +241,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Observação (opcional)"
                 value={snapshotNote}
                 onChange={(e) => setSnapshotNote(e.target.value)}
                 placeholder="Observação (opcional)"
@@ -255,6 +257,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
             </h3>
             <div className="space-y-2">
               <input
+                aria-label="O que foi entregue"
                 value={deliveryTitle}
                 onChange={(e) => setDeliveryTitle(e.target.value)}
                 placeholder="O que foi entregue"
@@ -262,6 +265,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="ID, registro ou link de evidência"
                 value={deliveryEvidence}
                 onChange={(e) => setDeliveryEvidence(e.target.value)}
                 placeholder="ID, registro ou link de evidência"
@@ -277,6 +281,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
             </h3>
             <div className="space-y-2">
               <input
+                aria-label="O que está travado"
                 value={blockerDescription}
                 onChange={(e) => setBlockerDescription(e.target.value)}
                 placeholder="O que está travado"
@@ -284,6 +289,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Impacto"
                 value={blockerImpact}
                 onChange={(e) => setBlockerImpact(e.target.value)}
                 placeholder="Impacto"
@@ -291,6 +297,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                 style={{ borderColor: "var(--color-border)" }}
               />
               <input
+                aria-label="Quem pode destravar"
                 value={blockerOwnerName}
                 onChange={(e) => setBlockerOwnerName(e.target.value)}
                 placeholder="Quem pode destravar"
@@ -360,7 +367,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
                   <button
                     onClick={() => resolveBlocker(b.id, b.status)}
                     className="text-xs font-semibold"
-                    style={{ color: "var(--color-primary)" }}
+                    style={{ color: "var(--badge-primary-fg)" }}
                   >
                     {b.status === "ABERTO" ? "Marcar resolvido" : "Reabrir"}
                   </button>

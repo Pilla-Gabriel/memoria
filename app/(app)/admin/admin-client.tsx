@@ -213,7 +213,7 @@ export function AdminPageClient() {
                 {savingUser ? "Criando..." : "Criar acesso"}
               </button>
               {newUserError && (
-                <p className="w-full text-xs" style={{ color: "var(--color-danger)" }}>
+                <p className="w-full text-xs" style={{ color: "var(--badge-danger-fg)" }}>
                   {newUserError}
                 </p>
               )}
@@ -282,7 +282,7 @@ export function AdminPageClient() {
                               Cancelar
                             </button>
                             {editUserError && (
-                              <p className="w-full text-xs" style={{ color: "var(--color-danger)" }}>
+                              <p className="w-full text-xs" style={{ color: "var(--badge-danger-fg)" }}>
                                 {editUserError}
                               </p>
                             )}
@@ -317,7 +317,8 @@ export function AdminPageClient() {
                           <button
                             onClick={() => startEditUser(u)}
                             aria-label="Editar"
-                            style={{ color: "var(--color-primary)" }}
+                            className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
+                            style={{ color: "var(--badge-primary-fg)" }}
                           >
                             <Pencil size={14} />
                           </button>

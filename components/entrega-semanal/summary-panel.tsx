@@ -28,7 +28,7 @@ export async function EntregaSemanalSummaryPanel() {
           <h2 className="font-semibold flex items-center gap-2">
             <Send size={17} /> Entrega Semanal
           </h2>
-          <span className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
             Ver tudo →
           </span>
         </div>
@@ -57,12 +57,12 @@ export async function EntregaSemanalSummaryPanel() {
           </div>
         </div>
         {summary.frentesEmRisco > 0 && (
-          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--color-danger)" }}>
+          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--badge-danger-fg)" }}>
             <AlertTriangle size={13} /> {summary.frentesEmRisco} frente(s) podem não atingir a meta de 30 dias.
           </p>
         )}
         {summary.openBlockers > 0 && (
-          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--color-warning)" }}>
+          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--badge-warning-fg)" }}>
             <Lock size={13} /> {summary.openBlockers} bloqueio(s) aberto(s) aguardando destravar.
           </p>
         )}

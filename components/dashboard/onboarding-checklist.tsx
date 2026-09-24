@@ -28,7 +28,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
     <div className="card p-5" style={{ borderColor: "var(--color-primary)" }}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} style={{ color: "var(--color-primary)" }} />
+          <Sparkles size={16} style={{ color: "var(--badge-primary-fg)" }} />
           <h2 className="font-semibold">
             Primeiros passos
             <span className="font-normal text-sm ml-2" style={{ color: "var(--color-text-secondary)" }}>
@@ -39,7 +39,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
         <button
           onClick={dismiss}
           disabled={dismissing}
-          className="p-1 rounded-full hover:bg-black/5 shrink-0 disabled:opacity-60"
+          className="p-1 rounded-full hover:bg-black/5 shrink-0 disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
           aria-label="Dispensar"
           title="Dispensar"
         >

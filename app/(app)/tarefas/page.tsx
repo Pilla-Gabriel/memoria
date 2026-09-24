@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Plus, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { StatusBadge, PriorityBadge, NeedsDueDateBadge } from "@/components/tasks/badges";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type Task = {
   id: string;
@@ -186,28 +187,14 @@ function TarefasList() {
           Sem prazo
         </button>
         {canSeeTeam && (
-          <div className="flex rounded-xl border overflow-hidden text-sm" style={{ borderColor: "var(--color-border)" }}>
-            <button
-              onClick={() => setScope("mine")}
-              className="px-3 py-2.5 font-medium"
-              style={{
-                background: scope === "mine" ? "var(--color-primary)" : "transparent",
-                color: scope === "mine" ? "#fff" : "var(--color-text)",
-              }}
-            >
-              Minhas
-            </button>
-            <button
-              onClick={() => setScope("team")}
-              className="px-3 py-2.5 font-medium"
-              style={{
-                background: scope === "team" ? "var(--color-primary)" : "transparent",
-                color: scope === "team" ? "#fff" : "var(--color-text)",
-              }}
-            >
-              Todas
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: "mine" as const, label: "Minhas" },
+              { value: "team" as const, label: "Todas" },
+            ]}
+            value={scope}
+            onChange={setScope}
+          />
         )}
       </div>
 

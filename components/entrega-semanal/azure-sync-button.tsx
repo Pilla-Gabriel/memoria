@@ -33,7 +33,7 @@ export function AzureSyncButton({ compact = false }: { compact?: boolean }) {
         onClick={handleClick}
         disabled={syncing}
         className="text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
-        style={{ color: "var(--color-primary)" }}
+        style={{ color: "var(--badge-primary-fg)" }}
       >
         <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
         {syncing ? "Sincronizando..." : "Forçar sincronização agora"}

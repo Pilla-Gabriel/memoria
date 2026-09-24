@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Trash2, Info } from "lucide-react";
 import { GoalStatusBadge, GoalTypeLabel } from "@/components/goals/goal-status-badge";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type ProgressEntry = {
   id: string;
@@ -133,18 +134,18 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <div className="flex items-center gap-3">
-          <Link href={`/metas/${id}/editar`} className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--color-primary)" }}>
+          <Link href={`/metas/${id}/editar`} className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--badge-primary-fg)" }}>
             <Pencil size={15} /> Editar
           </Link>
           <button
             onClick={handleDeleteGoal}
             disabled={deleting}
             className="text-sm font-semibold flex items-center gap-1.5 disabled:opacity-60"
-            style={{ color: "#dc2626" }}
+            style={{ color: "var(--badge-danger-fg)" }}
           >
             <Trash2 size={15} /> Excluir
           </button>
@@ -177,7 +178,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {showStatusInfo && (
-          <div className="mb-4 rounded-lg border p-3 text-xs space-y-1.5" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-alt)" }}>
+          <div className="mb-4 rounded-lg border p-3 text-xs space-y-1.5" style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}>
             {STATUS_EXPLANATION.map((s) => (
               <p key={s.status}>
                 <span className="font-semibold">{s.label}:</span> {s.text}
@@ -225,23 +226,16 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
         <h2 className="font-semibold mb-3">Registrar avanço</h2>
 
         {goal.unitType === "NUMBER" && (
-          <div className="flex rounded-xl border overflow-hidden text-xs w-fit mb-3" style={{ borderColor: "var(--color-border)" }}>
-            <button
-              type="button"
-              onClick={() => setPercentMode(false)}
-              className="px-3 py-1.5 font-medium"
-              style={{ background: !percentMode ? "var(--color-primary)" : "transparent", color: !percentMode ? "#fff" : "var(--color-text)" }}
-            >
-              Informar valor
-            </button>
-            <button
-              type="button"
-              onClick={() => setPercentMode(true)}
-              className="px-3 py-1.5 font-medium"
-              style={{ background: percentMode ? "var(--color-primary)" : "transparent", color: percentMode ? "#fff" : "var(--color-text)" }}
-            >
-              Informar %
-            </button>
+          <div className="mb-3">
+            <SegmentedControl
+              size="xs"
+              options={[
+                { value: "value" as const, label: "Informar valor" },
+                { value: "percent" as const, label: "Informar %" },
+              ]}
+              value={percentMode ? "percent" : "value"}
+              onChange={(v) => setPercentMode(v === "percent")}
+            />
           </div>
         )}
 
@@ -254,6 +248,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                 min={0}
                 max={100}
                 required
+                aria-label="Percentual concluído"
                 value={percentValue}
                 onChange={(e) => setPercentValue(e.target.value)}
                 placeholder="% concluído"
@@ -271,6 +266,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
               type="number"
               step="any"
               required
+              aria-label={`Novo valor (${goal.unit})`}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={`Novo valor (${goal.unit})`}
@@ -279,6 +275,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
             />
           )}
           <input
+            aria-label="Observação (opcional)"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Observação (opcional)"
@@ -301,12 +298,14 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                   <input
                     type="number"
                     step="any"
+                    aria-label="Valor"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     className="rounded-lg border px-2.5 py-1.5 text-sm outline-none w-28"
                     style={{ borderColor: "var(--color-border)" }}
                   />
                   <input
+                    aria-label="Observação"
                     value={editNote}
                     onChange={(e) => setEditNote(e.target.value)}
                     placeholder="Observação"
@@ -333,10 +332,20 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                     <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                       {p.createdBy.name} · {new Date(p.createdAt).toLocaleDateString("pt-BR")}
                     </span>
-                    <button onClick={() => startEditProgress(p)} aria-label="Editar" style={{ color: "var(--color-primary)" }}>
+                    <button
+                      onClick={() => startEditProgress(p)}
+                      aria-label="Editar"
+                      className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
+                      style={{ color: "var(--badge-primary-fg)" }}
+                    >
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => deleteProgress(p.id)} aria-label="Excluir" style={{ color: "#dc2626" }}>
+                    <button
+                      onClick={() => deleteProgress(p.id)}
+                      aria-label="Excluir"
+                      className="p-1.5 rounded-lg min-w-9 min-h-9 flex items-center justify-center"
+                      style={{ color: "var(--badge-danger-fg)" }}
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>

@@ -56,7 +56,7 @@ export default function EditarTarefaPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href={`/tarefas/${id}`} className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href={`/tarefas/${id}`} className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <h1 className="text-2xl font-bold mt-2">Editar tarefa</h1>

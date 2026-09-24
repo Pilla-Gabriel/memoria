@@ -91,7 +91,7 @@ export default async function EntregaSemanalPage() {
         <Link
           href={`/entrega-semanal/relatorios/${pendingReport.id}`}
           className="card p-4 flex items-center justify-between gap-3"
-          style={{ background: "rgba(255,242,0,0.12)" }}
+          style={{ background: "rgba(255,246,28,0.15)" }}
         >
           <span className="text-sm font-semibold">
             Você tem um relatório de {KIND_LABEL[pendingReport.kind]} pendente de preenchimento.
@@ -108,7 +108,7 @@ export default async function EntregaSemanalPage() {
           <ul className="space-y-1.5 text-sm">
             {frenteAlerts.map((a) => (
               <li key={a.id} className="flex items-center gap-2">
-                <AlertTriangle size={14} style={{ color: "var(--color-warning)" }} />
+                <AlertTriangle size={14} style={{ color: "var(--badge-warning-fg)" }} />
                 {a.message}
               </li>
             ))}
@@ -156,7 +156,7 @@ export default async function EntregaSemanalPage() {
                     <SourceLabel source={c.frente.source} detail={c.frente.sourceDetail} linkify={false} />
                   </span>
                   {c.openBlockers.length > 0 && (
-                    <span style={{ color: "var(--color-danger)" }}>{c.openBlockers.length} bloqueio(s)</span>
+                    <span style={{ color: "var(--badge-danger-fg)" }}>{c.openBlockers.length} bloqueio(s)</span>
                   )}
                 </div>
               </Link>
@@ -177,7 +177,7 @@ export default async function EntregaSemanalPage() {
         <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
           {myReports.length === 0 && (
             <p className="p-5 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Nenhum relatório ainda. Relatórios são gerados automaticamente às segundas e sextas para líderes e
+              Nenhum relatório ainda. Relatórios são gerados automaticamente às segundas e sextas para
               administradores.
             </p>
           )}
@@ -189,7 +189,7 @@ export default async function EntregaSemanalPage() {
                 </p>
                 <ReportStatusBadge status={r.status} />
               </div>
-              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

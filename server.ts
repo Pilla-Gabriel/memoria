@@ -81,6 +81,18 @@ app.prepare().then(() => {
   // Encaminha upgrades de WebSocket (HMR do Turbopack) para o Next.js.
   httpServer.on("upgrade", app.getUpgradeHandler());
 
+  // Sem isso, uma falha de bind (ex.: porta já em uso por um processo antigo
+  // que não foi encerrado) vira uma exceção não tratada, assíncrona, que
+  // sobra pra depois do resto do `.then()` já ter rodado (agendador incluído)
+  // — o processo fica pela metade (às vezes só HTTP ou só HTTPS no ar) sem
+  // cair e sem ser reiniciado pelo loop do run-service.bat. Terminando aqui
+  // explicitamente, o processo cai de verdade e o loop reinicia (e mata) o
+  // antigo na próxima tentativa.
+  httpServer.on("error", (err) => {
+    console.error(`[server] falha ao subir HTTP na porta ${port}:`, err);
+    process.exit(1);
+  });
+
   httpServer.listen(port, () => {
     console.log(`> MEMÓRIA rodando em http://localhost:${port} (${dev ? "development" : "production"})`);
   });
@@ -104,6 +116,10 @@ app.prepare().then(() => {
       }
     );
     httpsServer.on("upgrade", app.getUpgradeHandler());
+    httpsServer.on("error", (err) => {
+      console.error(`[server] falha ao subir HTTPS na porta ${httpsPort}:`, err);
+      process.exit(1);
+    });
     httpsServer.listen(httpsPort, () => {
       console.log(`> MEMÓRIA rodando em https://localhost:${httpsPort} (${dev ? "development" : "production"})`);
     });

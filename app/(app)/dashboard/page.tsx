@@ -119,7 +119,7 @@ export default async function DashboardPage() {
 
       {total === 0 && metasTotal === 0 ? (
         <div className="card p-8 text-center flex flex-col items-center gap-3">
-          <ListChecks size={28} style={{ color: "var(--color-primary)" }} />
+          <ListChecks size={28} style={{ color: "var(--badge-primary-fg)" }} />
           <h2 className="font-semibold">Você ainda não tem tarefas nem metas por aqui</h2>
           <p className="text-sm max-w-sm" style={{ color: "var(--color-text-secondary)" }}>
             Comece respondendo um check-in ou criando a primeira tarefa — os indicadores deste painel aparecem
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 border divide-x divide-y border-[var(--color-border)] divide-[var(--color-border)]">
           <StatCard label="Total de tarefas" value={total} icon={ListChecks} tone="primary" href="/tarefas" />
           <StatCard label="Pendentes" value={pendente} icon={Clock} tone="default" href="/tarefas?status=PENDENTE" />
           <StatCard label="Em andamento" value={emAndamento} icon={TrendingUp} tone="primary" href="/tarefas?status=EM_ANDAMENTO" />
@@ -144,11 +144,11 @@ export default async function DashboardPage() {
 
       <EntregaSemanalSummaryPanel />
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Próximos vencimentos</h2>
-            <Link href="/tarefas" className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div>
+          <div className="flex items-end justify-between mb-4 pb-3 border-b" style={{ borderColor: "var(--color-text)" }}>
+            <h2 className="text-xl font-bold uppercase">Próximos vencimentos</h2>
+            <Link href="/tarefas" className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
               Ver todas
             </Link>
           </div>
@@ -157,48 +157,64 @@ export default async function DashboardPage() {
               Nenhum vencimento nos próximos 7 dias.
             </p>
           ) : (
-            <ul className="space-y-3">
-              {proximosVencimentos.map((task) => (
-                <li key={task.id} className="flex items-center justify-between text-sm">
-                  <Link href={`/tarefas/${task.id}`} className="font-medium hover:underline">
-                    {task.title}
-                  </Link>
-                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                    {task.dueDate?.toLocaleDateString("pt-BR")} · {PRIORITY_LABEL[task.priority]}
-                  </span>
-                </li>
-              ))}
+            <ul>
+              {proximosVencimentos.map((task, i) => {
+                const daysLeft = task.dueDate ? daysBetween(new Date(), task.dueDate) : null;
+                const urgencyColor =
+                  daysLeft !== null && daysLeft <= 1
+                    ? "var(--color-danger)"
+                    : daysLeft !== null && daysLeft <= 3
+                      ? "var(--color-warning)"
+                      : "var(--color-success)";
+                return (
+                  <li
+                    key={task.id}
+                    className="flex items-center gap-4 py-3.5 border-b pl-3"
+                    style={{ borderColor: "var(--color-border)", borderLeft: `3px solid ${urgencyColor}` }}
+                  >
+                    <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--color-text-secondary)" }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <Link href={`/tarefas/${task.id}`} className="flex-1 text-sm font-semibold hover:underline min-w-0 truncate">
+                      {task.title}
+                    </Link>
+                    <span className="text-xs shrink-0" style={{ color: "var(--color-text-secondary)" }}>
+                      {task.dueDate?.toLocaleDateString("pt-BR")} · {PRIORITY_LABEL[task.priority]}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Minhas metas</h2>
-            <Link href="/metas" className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+        <div>
+          <div className="flex items-end justify-between mb-4 pb-3 border-b" style={{ borderColor: "var(--color-text)" }}>
+            <h2 className="text-xl font-bold uppercase">Minhas metas</h2>
+            <Link href="/metas" className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
               Ver todas
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <Link href="/metas" className="rounded-xl py-1.5 hover:bg-black/[0.03]">
-              <p className="text-xl font-bold">{metasTotal}</p>
-              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          <div className="grid grid-cols-3 border divide-x border-[var(--color-border)] divide-[var(--color-border)]">
+            <Link href="/metas" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-primary-fg)" }}>{metasTotal}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>
                 Total
               </p>
             </Link>
-            <Link href="/metas?status=ATINGIDA" className="rounded-xl py-1.5 hover:bg-black/[0.03]">
-              <p className="text-xl font-bold" style={{ color: "var(--color-success)" }}>
+            <Link href="/metas?status=ATINGIDA" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-success-fg)" }}>
                 {metasAtingidas}
               </p>
-              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>
                 Atingidas
               </p>
             </Link>
-            <Link href="/metas?status=EM_RISCO" className="rounded-xl py-1.5 hover:bg-black/[0.03]">
-              <p className="text-xl font-bold" style={{ color: "var(--color-warning)" }}>
+            <Link href="/metas?status=EM_RISCO" className="flex flex-col items-center py-4 hover:bg-black/[0.02]">
+              <p className="font-display font-bold text-3xl" style={{ color: "var(--badge-warning-fg)" }}>
                 {metasEmRisco}
               </p>
-              <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wide mt-1" style={{ color: "var(--color-text-secondary)" }}>
                 Em risco
               </p>
             </Link>

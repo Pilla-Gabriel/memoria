@@ -7,7 +7,7 @@ export default async function NovaFrentePage() {
   const session = await auth();
 
   if (!session?.user || !isManager(session.user.role)) {
-    return <p style={{ color: "var(--color-danger)" }}>Acesso restrito a líderes e administradores</p>;
+    return <p style={{ color: "var(--badge-danger-fg)" }}>Acesso restrito a administradores</p>;
   }
 
   return (

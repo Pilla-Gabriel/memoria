@@ -26,7 +26,7 @@ export default function NovaMetaPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
+        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <h1 className="text-2xl font-bold mt-2">Nova meta</h1>

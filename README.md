@@ -36,8 +36,8 @@ Todas com a senha `memoria123`:
 
 | Perfil | E-mail |
 | --- | --- |
-| Administrador | admin@memoria.app |
-| Usuário | usuario@memoria.app |
+| Administrador | `admin@memoria.app` |
+| Usuário | `usuario@memoria.app` |
 
 ## Identidade visual
 

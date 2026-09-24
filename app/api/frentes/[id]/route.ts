@@ -30,7 +30,7 @@ export const GET = withBase<{ params: Promise<{ id: string }> }>(async (_request
 
 export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   if (!isManager(session.user.role)) {
-    return NextResponse.json({ error: "Apenas líderes ou administradores podem editar frentes" }, { status: 403 });
+    return NextResponse.json({ error: "Apenas administradores podem editar frentes" }, { status: 403 });
   }
 
   const { id } = await ctx.params;
@@ -56,7 +56,7 @@ export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (reques
 
 export const DELETE = withBase<{ params: Promise<{ id: string }> }>(async (_request, ctx, session) => {
   if (!isManager(session.user.role)) {
-    return NextResponse.json({ error: "Apenas líderes ou administradores podem arquivar frentes" }, { status: 403 });
+    return NextResponse.json({ error: "Apenas administradores podem arquivar frentes" }, { status: 403 });
   }
 
   const { id } = await ctx.params;
