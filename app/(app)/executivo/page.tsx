@@ -110,7 +110,7 @@ export default function ExecutivoPage() {
         <p style={{ color: "var(--color-text-secondary)" }}>Indicadores consolidados de produtividade e accountability.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 border divide-x divide-y border-[var(--color-border)] divide-[var(--color-border)]">
         <StatCard label="Taxa de conclusão" value={`${data.taxaConclusao}%`} icon={TrendingUp} tone="success" href="/tarefas?status=CONCLUIDA&scope=team" />
         <StatCard label="Taxa de atraso" value={`${data.taxaAtraso}%`} icon={AlertOctagon} tone="danger" href="/tarefas?status=ATRASADA&scope=team" />
         <StatCard label="Tempo médio de conclusão" value={`${data.avgCompletionDays}d`} icon={Clock} tone="primary" href="/tarefas?status=CONCLUIDA&scope=team" />

@@ -91,7 +91,7 @@ export default async function EntregaSemanalPage() {
         <Link
           href={`/entrega-semanal/relatorios/${pendingReport.id}`}
           className="card p-4 flex items-center justify-between gap-3"
-          style={{ background: "rgba(255,242,0,0.12)" }}
+          style={{ background: "rgba(255,246,28,0.15)" }}
         >
           <span className="text-sm font-semibold">
             Você tem um relatório de {KIND_LABEL[pendingReport.kind]} pendente de preenchimento.
@@ -177,7 +177,7 @@ export default async function EntregaSemanalPage() {
         <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
           {myReports.length === 0 && (
             <p className="p-5 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Nenhum relatório ainda. Relatórios são gerados automaticamente às segundas e sextas para líderes e
+              Nenhum relatório ainda. Relatórios são gerados automaticamente às segundas e sextas para
               administradores.
             </p>
           )}

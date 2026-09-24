@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { Menu, Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { initialsForName, hexToRgba } from "@/lib/base-color";
+import { Logo } from "@/components/brand/logo";
 
 // Tempo em que o botão "Confirmar" fica desabilitado após abrir o passo de
 // confirmação — pequeno o bastante para não incomodar quem está prestando
@@ -249,15 +250,17 @@ export function Header({
       className="h-16 flex items-center justify-between px-4 md:px-6 border-b sticky top-0 z-30"
       style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
     >
-      <button
-        className="md:hidden -ml-2 min-w-11 min-h-11 flex items-center justify-center"
-        onClick={onMenuClick}
-        aria-label="Abrir menu"
-      >
-        <Menu size={22} />
-      </button>
-
-      <BaseIndicator activeBase={activeBase} accessibleBases={accessibleBases} />
+      <div className="flex items-center gap-3 md:gap-4 min-w-0">
+        <Logo className="shrink-0" />
+        <button
+          className="md:hidden min-w-11 min-h-11 flex items-center justify-center shrink-0"
+          onClick={onMenuClick}
+          aria-label="Abrir menu"
+        >
+          <Menu size={22} />
+        </button>
+        <BaseIndicator activeBase={activeBase} accessibleBases={accessibleBases} />
+      </div>
 
       <div className="flex items-center gap-2 md:gap-4">
         <button

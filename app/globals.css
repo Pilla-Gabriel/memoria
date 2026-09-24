@@ -1,53 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  /* Paleta ONCLICK (lp.onclick.com.br/kpl): azul + amarelo como cores de
-     marca, verde/vermelho para positivo/negativo. */
-  --color-primary: #009fe3;
-  --color-primary-dark: #0278aa;
-  --color-accent: #ffe100;
-  --color-success: #2aa55d;
-  --color-warning: #f59e0b;
-  --color-danger: #e24444;
+  /* Identidade validada no protótipo Lovable (weekly-wrapup): azul vivo +
+     navy profundo + amarelo, tipografia Sora/Manrope, cantos discretos em
+     vez de pílula. A logomarca (components/brand/logo.tsx) não muda. */
+  --color-primary: #00ace3;
+  --color-primary-dark: #003459;
+  --color-on-primary: #031222;
+  --color-accent: #fff61c;
+  --color-success: #20b46b;
+  --color-warning: #f5ae39;
+  --color-danger: #e62c2c;
 
-  --color-bg: #f8fafc;
+  --color-bg: #f7fbfd;
   --color-card: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text: #161a1e;
-  --color-text-secondary: #6b7280;
-  --color-accent-ink: #161a1e;
+  --color-border: #d6e0e7;
+  --color-text: #0b1928;
+  --color-text-secondary: #5c6b7a;
+  --color-accent-ink: #0b1928;
 
   --shadow-card: none;
 
-  /* Texto dos badges de status/prioridade — tons calibrados para o chip
+  /* Texto e fundo dos badges de status/prioridade — o par bg/fg de cada tom
+     semântico, para não repetir o mesmo rgba(...) hardcoded em cada arquivo
+     de badge (tasks, metas, entrega-semanal). Fg calibrado para o chip
      rgba(...,0.12) sobre --color-bg claro; redefinidos no dark abaixo. */
+  --badge-primary-bg: rgba(0, 172, 227, 0.12);
+  --badge-primary-fg: #003459;
+  /* Só usado pelo estado "Resolved" do Azure DevOps — não tem equivalente
+     em primary/success/warning/danger/neutral, categoria própria dele. */
+  --badge-info-bg: rgba(20, 184, 166, 0.12);
+  --badge-info-fg: #115e59;
+  --badge-success-bg: rgba(32, 180, 107, 0.12);
+  --badge-success-fg: #146c3f;
+  --badge-warning-bg: rgba(245, 174, 57, 0.12);
+  --badge-warning-fg: #8a5710;
+  --badge-danger-bg: rgba(230, 44, 44, 0.12);
+  --badge-danger-fg: #931c1c;
+  --badge-neutral-bg: rgba(107, 114, 128, 0.12);
   --badge-neutral-fg: #374151;
-  --badge-warning-fg: #92400e;
-  --badge-success-fg: #166534;
   --badge-muted-fg: #6b7280;
-  --badge-danger-fg: #991b1b;
+
+  /* Superfície discreta pra dropdown/painel embutido — um degrau entre
+     --color-bg e --color-card, não outra cor "de marca". */
+  --color-surface: #eef4f8;
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #0b1220;
-  --color-card: #111a2c;
-  --color-border: #2c3b5a;
+  --color-bg: #071522;
+  --color-card: #0f1e30;
+  --color-border: #22354a;
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
-  --color-accent-ink: #161a1e;
+  --color-accent-ink: #0b1928;
+  --color-on-primary: #031222;
 
   --shadow-card: none;
 
-  --badge-neutral-fg: #cbd5e1;
-  --badge-warning-fg: #fbbf24;
+  --badge-primary-fg: #3fc8f5;
+  --badge-info-fg: #2dd4bf;
   --badge-success-fg: #4ade80;
-  --badge-muted-fg: #94a3b8;
+  --badge-warning-fg: #fbbf24;
   --badge-danger-fg: #f87171;
+  --badge-neutral-fg: #cbd5e1;
+  --badge-muted-fg: #94a3b8;
+
+  --color-surface: #14263a;
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
   --color-primary-dark: var(--color-primary-dark);
+  --color-on-primary: var(--color-on-primary);
   --color-accent: var(--color-accent);
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
@@ -58,7 +82,8 @@
   --color-text: var(--color-text);
   --color-text-secondary: var(--color-text-secondary);
 
-  --font-sans: var(--font-barlow), "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-manrope), "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: var(--font-sora), var(--font-manrope), "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 html {
@@ -85,17 +110,21 @@ body {
   box-shadow: var(--shadow-card);
 }
 
-/* Botões em formato de pílula — mesma forma dos CTAs da landing (border-radius: 99px). */
+/* Botões com cantos discretos (0.5rem) — a identidade validada troca a
+   pílula por um corte mais reto, mesma linguagem dos cards. --color-primary
+   é um azul vivo, então o texto do botão fica em --color-on-primary (navy
+   escuro), não branco — igual ao protótipo de referência. */
 .btn-primary {
   background: var(--color-primary);
-  color: #ffffff;
-  border-radius: 9999px;
+  color: var(--color-on-primary);
+  border-radius: 0.5rem;
   font-weight: 600;
   transition: background-color 0.15s ease, transform 0.05s ease;
 }
 
 .btn-primary:hover {
   background: var(--color-primary-dark);
+  color: #ffffff;
 }
 
 .btn-primary:active {
@@ -105,7 +134,7 @@ body {
 .btn-accent {
   background: var(--color-accent);
   color: var(--color-accent-ink);
-  border-radius: 9999px;
+  border-radius: 0.5rem;
   font-weight: 600;
   transition: filter 0.15s ease, transform 0.05s ease;
 }
@@ -118,22 +147,18 @@ body {
   transform: translateY(1px);
 }
 
-.brand-wave {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 60%);
-}
-
 /* O resto do app usa classes utilitárias do Tailwind (rounded-xl/rounded-lg)
    direto em botões e links espalhados por várias páginas, em vez da classe
-   .btn-primary/.btn-accent acima — força a forma de pílula ali também sem
-   precisar editar cada arquivo. Não afeta inputs, cards ou outros elementos
-   que usam essas mesmas classes de raio. */
+   .btn-primary/.btn-accent acima — normaliza a forma ali também sem precisar
+   editar cada arquivo. Não afeta inputs, cards ou outros elementos que usam
+   essas mesmas classes de raio. */
 button.rounded-xl,
 a.rounded-xl,
 button.rounded-2xl,
 a.rounded-2xl,
 button.rounded-lg,
 a.rounded-lg {
-  border-radius: 9999px;
+  border-radius: 0.5rem;
 }
 
 /* Vários inputs/selects/textareas pelo app usam a utilitária outline-none do
