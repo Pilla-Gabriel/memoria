@@ -26,7 +26,7 @@ export function Sidebar({
         />
       )}
       <aside
-        className={`fixed z-50 inset-y-0 left-0 w-64 flex flex-col border-r transition-transform md:static md:translate-x-0 ${
+        className={`fixed z-50 inset-y-0 left-0 w-64 flex flex-col border-r transition-transform motion-reduce:transition-none md:static md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
@@ -39,7 +39,7 @@ export function Sidebar({
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 min-h-11 text-sm font-medium transition-colors"
                 style={{
                   background: active ? "var(--color-primary)" : "transparent",
                   color: active ? "var(--color-on-primary)" : "var(--color-text)",

@@ -138,7 +138,7 @@ export function AdminPageClient() {
             onClick={() => setTab(t)}
             className="px-3 py-2 text-sm font-semibold whitespace-nowrap shrink-0"
             style={{
-              color: tab === t ? "var(--color-primary)" : "var(--color-text-secondary)",
+              color: tab === t ? "var(--badge-primary-fg)" : "var(--color-text-secondary)",
               borderBottom: tab === t ? "2px solid var(--color-primary)" : "2px solid transparent",
             }}
           >
@@ -308,7 +308,7 @@ export function AdminPageClient() {
                           <button
                             onClick={() => updateUser(u.id, { active: !u.active })}
                             className="text-xs font-semibold"
-                            style={{ color: u.active ? "var(--color-success)" : "var(--color-danger)" }}
+                            style={{ color: u.active ? "var(--badge-success-fg)" : "var(--badge-danger-fg)" }}
                           >
                             {u.active ? "Ativo" : "Inativo"}
                           </button>

@@ -45,7 +45,7 @@ export function MultiSelect({
         className="rounded-xl border px-3 py-2.5 text-sm outline-none bg-transparent flex items-center gap-1.5"
         style={{
           borderColor: selected.length ? "var(--color-primary)" : "var(--color-border)",
-          color: selected.length ? "var(--color-primary)" : "var(--color-text)",
+          color: selected.length ? "var(--badge-primary-fg)" : "var(--color-text)",
         }}
       >
         {summary}
@@ -77,7 +77,7 @@ export function MultiSelect({
                     background: checked ? "var(--color-primary)" : "transparent",
                   }}
                 >
-                  {checked && <Check size={11} color="#fff" />}
+                  {checked && <Check size={11} style={{ color: "var(--color-on-primary)" }} />}
                 </span>
                 {opt.label}
               </button>

@@ -156,7 +156,7 @@ export default function ConfiguracoesPage() {
             style={{
               borderColor: "var(--color-border)",
               background: theme === "LIGHT" ? "var(--color-primary)" : "transparent",
-              color: theme === "LIGHT" ? "#fff" : "var(--color-text)",
+              color: theme === "LIGHT" ? "var(--color-on-primary)" : "var(--color-text)",
             }}
           >
             <Sun size={16} /> Claro
@@ -167,7 +167,7 @@ export default function ConfiguracoesPage() {
             style={{
               borderColor: "var(--color-border)",
               background: theme === "DARK" ? "var(--color-primary)" : "transparent",
-              color: theme === "DARK" ? "#fff" : "var(--color-text)",
+              color: theme === "DARK" ? "var(--color-on-primary)" : "var(--color-text)",
             }}
           >
             <Moon size={16} /> Escuro

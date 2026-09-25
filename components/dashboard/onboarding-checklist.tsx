@@ -60,7 +60,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
                   border: step.done ? "none" : "1.5px solid var(--color-border)",
                 }}
               >
-                {step.done && <Check size={12} color="#fff" />}
+                {step.done && <Check size={12} style={{ color: "var(--color-on-primary)" }} />}
               </span>
               <span style={{ textDecoration: step.done ? "line-through" : "none", opacity: step.done ? 0.6 : 1 }}>
                 {step.label}

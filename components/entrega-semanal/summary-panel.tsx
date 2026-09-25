@@ -40,7 +40,7 @@ export async function EntregaSemanalSummaryPanel() {
             </p>
           </div>
           <div>
-            <p className="text-xl font-bold" style={{ color: summary.frentesEmRisco > 0 ? "var(--color-danger)" : "var(--color-success)" }}>
+            <p className="text-xl font-bold" style={{ color: summary.frentesEmRisco > 0 ? "var(--badge-danger-fg)" : "var(--badge-success-fg)" }}>
               {summary.frentesEmRisco}
             </p>
             <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
@@ -48,7 +48,7 @@ export async function EntregaSemanalSummaryPanel() {
             </p>
           </div>
           <div>
-            <p className="text-xl font-bold" style={{ color: summary.openBlockers > 0 ? "var(--color-warning)" : "var(--color-success)" }}>
+            <p className="text-xl font-bold" style={{ color: summary.openBlockers > 0 ? "var(--badge-warning-fg)" : "var(--badge-success-fg)" }}>
               {summary.openBlockers}
             </p>
             <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>

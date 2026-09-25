@@ -33,7 +33,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={`${SIZE_CLASS[size]} font-medium`}
-            style={{ background: active ? "var(--color-primary)" : "transparent", color: active ? "#fff" : "var(--color-text)" }}
+            style={{ background: active ? "var(--color-primary)" : "transparent", color: active ? "var(--color-on-primary)" : "var(--color-text)" }}
           >
             {opt.label}
           </button>

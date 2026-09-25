@@ -5,17 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { StatCard } from "@/components/ui/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  TrendingUp,
-  AlertOctagon,
-  Clock,
-  CalendarClock,
-  Award,
-  XCircle,
-  MessageCircleQuestion,
-  MessageCircleX,
-  Send,
-} from "lucide-react";
+import { Send } from "lucide-react";
 
 type Summary = {
   statusCounts: { status: string; count: number }[];
@@ -111,14 +101,14 @@ export default function ExecutivoPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 border divide-x divide-y border-[var(--color-border)] divide-[var(--color-border)]">
-        <StatCard label="Taxa de conclusão" value={`${data.taxaConclusao}%`} icon={TrendingUp} tone="success" href="/tarefas?status=CONCLUIDA&scope=team" />
-        <StatCard label="Taxa de atraso" value={`${data.taxaAtraso}%`} icon={AlertOctagon} tone="danger" href="/tarefas?status=ATRASADA&scope=team" />
-        <StatCard label="Tempo médio de conclusão" value={`${data.avgCompletionDays}d`} icon={Clock} tone="primary" href="/tarefas?status=CONCLUIDA&scope=team" />
-        <StatCard label="Prorrogações realizadas" value={data.extensionsCount} icon={CalendarClock} tone="warning" href="/tarefas?scope=team" />
-        <StatCard label="Metas atingidas" value={data.goalsAtingidas} icon={Award} tone="success" href="/metas?status=ATINGIDA" />
-        <StatCard label="Metas vencidas" value={data.goalsVencidas} icon={XCircle} tone="danger" href="/metas?status=VENCIDA" />
-        <StatCard label="Recuperados via check-in" value={data.checkinRecovered} icon={MessageCircleQuestion} tone="primary" href="/checkin" />
-        <StatCard label="Check-ins ignorados" value={data.checkinsIgnorados} icon={MessageCircleX} tone="danger" href="/checkin" />
+        <StatCard label="Taxa de conclusão" value={`${data.taxaConclusao}%`} tone="success" href="/tarefas?status=CONCLUIDA&scope=team" />
+        <StatCard label="Taxa de atraso" value={`${data.taxaAtraso}%`} tone="danger" href="/tarefas?status=ATRASADA&scope=team" />
+        <StatCard label="Tempo médio de conclusão" value={`${data.avgCompletionDays}d`} tone="primary" href="/tarefas?status=CONCLUIDA&scope=team" />
+        <StatCard label="Prorrogações realizadas" value={data.extensionsCount} tone="warning" href="/tarefas?scope=team" />
+        <StatCard label="Metas atingidas" value={data.goalsAtingidas} tone="success" href="/metas?status=ATINGIDA" />
+        <StatCard label="Metas vencidas" value={data.goalsVencidas} tone="danger" href="/metas?status=VENCIDA" />
+        <StatCard label="Recuperados via check-in" value={data.checkinRecovered} tone="primary" href="/checkin" />
+        <StatCard label="Check-ins ignorados" value={data.checkinsIgnorados} tone="danger" href="/checkin" />
       </div>
 
       {/* O card completo (Frentes/Em risco/Bloqueios) já vive no Painel — aqui fica

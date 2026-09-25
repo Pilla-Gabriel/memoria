@@ -20,9 +20,9 @@ const SUCCESS_ACTIONS = ["CRIADA", "APROVADA", "CONCLUIDA", "ATINGIDA", "AUTO_AP
 const WARNING_ACTIONS = ["PRORROGACAO", "SOLICITADA", "STATUS"];
 
 function actionColor(action: string) {
-  if (DANGER_ACTIONS.some((k) => action.includes(k))) return "var(--color-danger)";
-  if (SUCCESS_ACTIONS.some((k) => action.includes(k))) return "var(--color-success)";
-  if (WARNING_ACTIONS.some((k) => action.includes(k))) return "var(--color-warning)";
+  if (DANGER_ACTIONS.some((k) => action.includes(k))) return "var(--badge-danger-fg)";
+  if (SUCCESS_ACTIONS.some((k) => action.includes(k))) return "var(--badge-success-fg)";
+  if (WARNING_ACTIONS.some((k) => action.includes(k))) return "var(--badge-warning-fg)";
   return "var(--color-text)";
 }
 
