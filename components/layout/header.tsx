@@ -22,6 +22,10 @@ const ROLE_LABEL: Record<string, string> = {
 
 const UNREAD_POLL_MS = 45_000;
 
+function unreadLabel(count: number) {
+  return count === 1 ? "1 alerta não lido" : `${count} alertas não lidos`;
+}
+
 type AccessibleBase = { id: string; slug: string; name: string; color: string };
 
 function BaseIndicator({
@@ -223,9 +227,12 @@ export function Header({
 }) {
   const { theme, toggleTheme } = useTheme();
   const [liveUnreadCount, setLiveUnreadCount] = useState(unreadCount);
+  const [announcement, setAnnouncement] = useState("");
+  const lastCountRef = useRef(unreadCount);
 
   useEffect(() => {
     setLiveUnreadCount(unreadCount);
+    lastCountRef.current = unreadCount;
   }, [unreadCount]);
 
   useEffect(() => {
@@ -234,7 +241,12 @@ export function Header({
       fetch("/api/alerts/unread-count")
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          if (!cancelled && data) setLiveUnreadCount(data.count);
+          if (cancelled || !data) return;
+          // Anuncia só quando chega alerta novo — não a cada poll nem no
+          // carregamento, pra não virar ruído no leitor de tela.
+          if (data.count > lastCountRef.current) setAnnouncement(unreadLabel(data.count));
+          lastCountRef.current = data.count;
+          setLiveUnreadCount(data.count);
         })
         .catch(() => {});
     };
@@ -282,11 +294,16 @@ export function Header({
         <Link
           href="/alertas"
           className="relative rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
-          aria-label="Alertas"
+          aria-label={
+            liveUnreadCount > 0
+              ? `Alertas, ${liveUnreadCount === 1 ? "1 não lido" : `${liveUnreadCount} não lidos`}`
+              : "Alertas"
+          }
         >
           <Bell size={19} />
           {liveUnreadCount > 0 && (
             <span
+              aria-hidden="true"
               className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
               style={{ background: "var(--color-danger-strong)" }}
             >
@@ -294,6 +311,9 @@ export function Header({
             </span>
           )}
         </Link>
+        <span role="status" aria-live="polite" className="sr-only">
+          {announcement}
+        </span>
 
         <div className="hidden sm:flex flex-col text-right leading-tight">
           <span className="text-sm font-semibold">{name}</span>

@@ -4,13 +4,14 @@ import { useEffect, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dateInputToISOString } from "@/lib/date";
+import { readFormError, type FormError } from "@/lib/form-error";
 import { TaskForm, type TaskFormValues } from "@/components/tasks/task-form";
 
 export default function EditarTarefaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
   const router = useRouter();
   const [initialValues, setInitialValues] = useState<TaskFormValues | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -46,8 +47,7 @@ export default function EditarTarefaPage({ params }: { params: Promise<{ id: str
 
     setSaving(false);
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setError(json.error ?? "Não foi possível salvar a tarefa.");
+      setError(await readFormError(res, "Não foi possível salvar a tarefa."));
       return;
     }
     router.push(`/tarefas/${id}`);

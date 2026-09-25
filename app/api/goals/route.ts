@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validationErrorResponse } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 import { getVisibleUserIds } from "@/lib/rbac";
 import { goalCreateSchema } from "@/lib/validation";
@@ -25,7 +26,7 @@ export const POST = withBase(async (request, _ctx, session, baseId) => {
   const body = await request.json();
   const parsed = goalCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+    return validationErrorResponse(parsed.error);
   }
 
   const data = parsed.data;

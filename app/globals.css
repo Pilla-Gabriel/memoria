@@ -96,6 +96,9 @@
 
 html {
   color-scheme: light;
+  /* O header é sticky (h-16): sem isso, navegar com Tab de volta pra cima
+     deixa o elemento focado escondido embaixo dele. */
+  scroll-padding-top: 5rem;
 }
 
 html[data-theme="dark"] {

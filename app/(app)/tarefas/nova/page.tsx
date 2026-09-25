@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dateInputToISOString } from "@/lib/date";
+import { readFormError, type FormError } from "@/lib/form-error";
 import { TaskForm, type TaskFormValues } from "@/components/tasks/task-form";
 
 export default function NovaTarefaPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(values: TaskFormValues) {
@@ -29,8 +30,7 @@ export default function NovaTarefaPage() {
 
     setSaving(false);
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setError(json.error ?? "Não foi possível criar a tarefa.");
+      setError(await readFormError(res, "Não foi possível criar a tarefa."));
       return;
     }
     const { task } = await res.json();
