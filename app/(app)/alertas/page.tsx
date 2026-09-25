@@ -46,9 +46,9 @@ const TYPE_META: Record<string, { icon: typeof Bell; tone: string }> = {
 
 const TONE_COLOR: Record<string, string> = {
   default: "var(--color-text-secondary)",
-  primary: "var(--color-primary)",
-  warning: "var(--color-warning)",
-  danger: "var(--color-danger)",
+  primary: "var(--badge-primary-fg)",
+  warning: "var(--badge-warning-fg)",
+  danger: "var(--badge-danger-fg)",
 };
 
 const GROUPS: { label: string; types: string[] }[] = [
@@ -121,7 +121,7 @@ export default function AlertasPage() {
       >
         <span
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: "rgba(0,0,0,0.04)", color: TONE_COLOR[meta.tone] }}
+          style={{ background: "var(--color-surface)", color: TONE_COLOR[meta.tone] }}
         >
           <IconComponent size={17} />
         </span>
@@ -148,7 +148,7 @@ export default function AlertasPage() {
               setRead(alert.id, !alert.read);
             }}
             className="text-xs font-semibold"
-            style={{ color: alert.read ? "var(--color-text-secondary)" : "var(--color-primary)" }}
+            style={{ color: alert.read ? "var(--color-text-secondary)" : "var(--badge-primary-fg)" }}
           >
             {alert.read ? "Marcar não lido" : "Marcar lido"}
           </button>

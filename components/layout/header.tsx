@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Menu, Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
-import { initialsForName, hexToRgba } from "@/lib/base-color";
+import { initialsForName, hexToRgba, readableBadgeColors } from "@/lib/base-color";
 import { Logo } from "@/components/brand/logo";
 
 // Tempo em que o botão "Confirmar" fica desabilitado após abrir o passo de
@@ -84,8 +84,8 @@ function BaseIndicator({
 
   const badge = (
     <span
-      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-      style={{ background: activeBase.color }}
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+      style={readableBadgeColors(activeBase.color)}
     >
       {initialsForName(activeBase.name)}
     </span>
@@ -184,8 +184,8 @@ function BaseIndicator({
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm hover:bg-black/5 text-left"
                   >
                     <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                      style={{ background: base.color }}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      style={readableBadgeColors(base.color)}
                     >
                       {initialsForName(base.name)}
                     </span>
@@ -251,7 +251,14 @@ export function Header({
       style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
     >
       <div className="flex items-center gap-3 md:gap-4 min-w-0">
-        <Logo className="shrink-0" />
+        {/* Abaixo de sm não cabe logo + wordmark + menu + base + 3 ícones em
+            375px — a pílula da base passava por cima do botão de tema. */}
+        <span className="shrink-0 sm:hidden">
+          <Logo showWordmark={false} />
+        </span>
+        <span className="shrink-0 hidden sm:block">
+          <Logo />
+        </span>
         <button
           className="md:hidden min-w-11 min-h-11 flex items-center justify-center shrink-0"
           onClick={onMenuClick}
@@ -281,7 +288,7 @@ export function Header({
           {liveUnreadCount > 0 && (
             <span
               className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-              style={{ background: "var(--color-danger)" }}
+              style={{ background: "var(--color-danger-strong)" }}
             >
               {liveUnreadCount > 9 ? "9+" : liveUnreadCount}
             </span>

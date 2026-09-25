@@ -181,7 +181,7 @@ function TarefasList() {
           style={{
             borderColor: "var(--color-border)",
             background: semPrazo ? "var(--color-warning)" : "transparent",
-            color: semPrazo ? "#fff" : "var(--color-text)",
+            color: semPrazo ? "var(--color-accent-ink)" : "var(--color-text)",
           }}
         >
           Sem prazo

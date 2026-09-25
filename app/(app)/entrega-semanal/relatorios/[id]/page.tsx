@@ -122,7 +122,7 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
             {f.deltaPct !== null && (
               <p
                 className="text-xs mt-2 font-semibold"
-                style={{ color: f.deltaAbs >= 0 ? "var(--color-success)" : "var(--color-danger)" }}
+                style={{ color: f.deltaAbs >= 0 ? "var(--badge-success-fg)" : "var(--badge-danger-fg)" }}
               >
                 Variação: {f.deltaAbs >= 0 ? "+" : ""}
                 {f.deltaAbs} {f.frente.unit} ({f.deltaPct >= 0 ? "+" : ""}

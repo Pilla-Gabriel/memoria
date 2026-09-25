@@ -4,6 +4,11 @@
   /* Identidade validada no protótipo Lovable (weekly-wrapup): azul vivo +
      navy profundo + amarelo, tipografia Sora/Manrope, cantos discretos em
      vez de pílula. A logomarca (components/brand/logo.tsx) não muda. */
+  /* --color-primary/-success/-warning/-danger são cores de preenchimento
+     (fundo, borda, barra, ponto). Como texto ficam abaixo de 4.5:1 — pra
+     texto use --badge-*-fg; texto SOBRE esses fundos usa --color-on-primary
+     ou --color-accent-ink, nunca branco. --color-primary-dark não tem
+     variante escura: só como fundo. */
   --color-primary: #00ace3;
   --color-primary-dark: #003459;
   --color-on-primary: #031222;
@@ -11,6 +16,9 @@
   --color-success: #20b46b;
   --color-warning: #f5ae39;
   --color-danger: #e62c2c;
+  /* Vermelho de fundo pra pílulas com texto branco (5:1); o --color-danger
+     dá só 4.4:1 com branco. */
+  --color-danger-strong: #d62828;
 
   --color-bg: #f7fbfd;
   --color-card: #ffffff;

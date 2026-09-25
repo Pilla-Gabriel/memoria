@@ -135,7 +135,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
               <button
                 onClick={() => toggle(item)}
                 className="text-xs font-semibold"
-                style={{ color: item.active ? "var(--color-success)" : "var(--color-text-secondary)" }}
+                style={{ color: item.active ? "var(--badge-success-fg)" : "var(--color-text-secondary)" }}
               >
                 {item.active ? "Ativo" : "Inativo"}
               </button>

@@ -1,9 +1,5 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 
-// Ícone deixou de ser desenhado — a identidade de referência (Lovable) usa só
-// tipografia nos blocos de estatística, sem badge colorido de ícone. Mantido
-// na assinatura do componente pra não obrigar a tocar cada call site.
 export function StatCard({
   label,
   value,
@@ -12,7 +8,6 @@ export function StatCard({
 }: {
   label: string;
   value: string | number;
-  icon: LucideIcon;
   tone?: "default" | "success" | "warning" | "danger" | "primary";
   href?: string;
 }) {

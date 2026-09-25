@@ -9,17 +9,7 @@ import { daysBetween } from "@/lib/services/risk-engine";
 import { StatCard } from "@/components/ui/stat-card";
 import { EntregaSemanalSummaryPanel } from "@/components/entrega-semanal/summary-panel";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/dashboard/onboarding-checklist";
-import {
-  ListChecks,
-  Clock,
-  Users,
-  CheckCircle2,
-  AlertOctagon,
-  CalendarX,
-  Target,
-  TrendingUp,
-  MessageCircleQuestion,
-} from "lucide-react";
+import { ListChecks, MessageCircleQuestion } from "lucide-react";
 
 const PRIORITY_LABEL: Record<string, string> = {
   BAIXA: "Baixa",
@@ -131,14 +121,14 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 border divide-x divide-y border-[var(--color-border)] divide-[var(--color-border)]">
-          <StatCard label="Total de tarefas" value={total} icon={ListChecks} tone="primary" href="/tarefas" />
-          <StatCard label="Pendentes" value={pendente} icon={Clock} tone="default" href="/tarefas?status=PENDENTE" />
-          <StatCard label="Em andamento" value={emAndamento} icon={TrendingUp} tone="primary" href="/tarefas?status=EM_ANDAMENTO" />
-          <StatCard label="Aguardando terceiros" value={aguardandoTerceiros} icon={Users} tone="warning" href="/tarefas?status=AGUARDANDO_TERCEIROS" />
-          <StatCard label="Concluídas" value={concluida} icon={CheckCircle2} tone="success" href="/tarefas?status=CONCLUIDA" />
-          <StatCard label="Atrasadas" value={atrasada} icon={AlertOctagon} tone="danger" href="/tarefas?status=ATRASADA" />
-          <StatCard label="Sem prazo" value={semPrazo} icon={CalendarX} tone="warning" href="/tarefas?semPrazo=true" />
-          <StatCard label="Taxa de conclusão" value={`${taxaConclusao}%`} icon={Target} tone="success" href="/tarefas" />
+          <StatCard label="Total de tarefas" value={total} tone="primary" href="/tarefas" />
+          <StatCard label="Pendentes" value={pendente} tone="default" href="/tarefas?status=PENDENTE" />
+          <StatCard label="Em andamento" value={emAndamento} tone="primary" href="/tarefas?status=EM_ANDAMENTO" />
+          <StatCard label="Aguardando terceiros" value={aguardandoTerceiros} tone="warning" href="/tarefas?status=AGUARDANDO_TERCEIROS" />
+          <StatCard label="Concluídas" value={concluida} tone="success" href="/tarefas?status=CONCLUIDA" />
+          <StatCard label="Atrasadas" value={atrasada} tone="danger" href="/tarefas?status=ATRASADA" />
+          <StatCard label="Sem prazo" value={semPrazo} tone="warning" href="/tarefas?semPrazo=true" />
+          <StatCard label="Taxa de conclusão" value={`${taxaConclusao}%`} tone="success" href="/tarefas" />
         </div>
       )}
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { initialsForName } from "@/lib/base-color";
+import { initialsForName, readableBadgeColors } from "@/lib/base-color";
 import { ErrorBanner } from "@/components/ui/error-banner";
 
 type AccessibleBase = { id: string; slug: string; name: string; color: string };
@@ -74,8 +74,8 @@ export function BaseSelector({ bases }: { bases: AccessibleBase[] }) {
             style={{ borderColor: "var(--color-border)" }}
           >
             <span
-              className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ background: base.color }}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold"
+              style={readableBadgeColors(base.color)}
             >
               {initialsForName(base.name)}
             </span>

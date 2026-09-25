@@ -57,7 +57,8 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
   }, [sessionId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    bottomRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "end" });
   }, [transcript, currentIndex]);
 
   // Depois que o usuário liga o microfone pela primeira vez (gesto exigido pelo
@@ -136,7 +137,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
       </div>
 
       {noActiveQuestions ? (
-        <div className="card p-5 flex items-start gap-3 text-sm" style={{ background: "rgba(239,68,68,0.08)" }}>
+        <div className="card p-5 flex items-start gap-3 text-sm" style={{ background: "var(--badge-danger-bg)" }}>
           <AlertTriangle size={18} style={{ color: "var(--badge-danger-fg)" }} className="shrink-0 mt-0.5" />
           <span>
             Você não tem nenhuma pergunta ativa para este tipo de check-in, então não há o que responder aqui. Ative
@@ -234,8 +235,8 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                     title={speech.listening ? "Parar gravação" : "Responder por voz"}
                     className="absolute right-0 top-0 w-11 h-11 rounded-full flex items-center justify-center"
                     style={{
-                      background: speech.listening ? "var(--color-danger)" : "var(--badge-primary-bg)",
-                      color: speech.listening ? "#fff" : "var(--color-primary)",
+                      background: speech.listening ? "var(--color-danger-strong)" : "var(--badge-primary-bg)",
+                      color: speech.listening ? "#fff" : "var(--badge-primary-fg)",
                     }}
                   >
                     {speech.listening ? <MicOff size={15} /> : <Mic size={15} />}
@@ -243,9 +244,9 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs flex items-center gap-1.5" style={{ color: speech.listening ? "var(--color-danger)" : "var(--color-text-secondary)" }}>
+                <span className="text-xs flex items-center gap-1.5" style={{ color: speech.listening ? "var(--badge-danger-fg)" : "var(--color-text-secondary)" }}>
                   {speech.listening && (
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--color-danger)" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse motion-reduce:animate-none" style={{ background: "var(--color-danger)" }} />
                   )}
                   {speech.listening ? "Ouvindo..." : `Pergunta ${currentIndex + 1} de ${questions.length}`}
                 </span>
@@ -272,7 +273,7 @@ export default function CheckInSessionPage({ params }: { params: Promise<{ sessi
           <div
             className="card p-4 flex items-center gap-3 text-sm"
             style={{
-              background: pendingConversion.length ? "rgba(245,158,11,0.08)" : "rgba(34,197,94,0.08)",
+              background: pendingConversion.length ? "var(--badge-warning-bg)" : "var(--badge-success-bg)",
             }}
           >
             {pendingConversion.length ? (
