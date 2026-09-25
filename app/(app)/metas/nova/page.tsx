@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { readFormError } from "@/lib/form-error";
 import { GoalForm, type GoalFormPayload } from "@/components/goals/goal-form";
 
 export default function NovaMetaPage() {
@@ -15,8 +16,7 @@ export default function NovaMetaPage() {
     });
 
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      return json.error ?? "Não foi possível criar a meta.";
+      return readFormError(res, "Não foi possível criar a meta.");
     }
     const { goal } = await res.json();
     router.push(`/metas/${goal.id}`);

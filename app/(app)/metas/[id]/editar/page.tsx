@@ -3,6 +3,7 @@
 import { useEffect, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { readFormError } from "@/lib/form-error";
 import { GoalForm, type GoalFormPayload, type GoalFormValues } from "@/components/goals/goal-form";
 
 function toDateInputValue(iso: string) {
@@ -46,8 +47,7 @@ export default function EditarMetaPage({ params }: { params: Promise<{ id: strin
     });
 
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      return json.error ?? "Não foi possível salvar a meta.";
+      return readFormError(res, "Não foi possível salvar a meta.");
     }
     router.push(`/metas/${id}`);
     return null;

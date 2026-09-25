@@ -5,6 +5,20 @@ import { dateInputToISOString } from "@/lib/date";
 import { DateQuickPicks } from "@/components/ui/date-quick-picks";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { FieldError, bannerMessage, fieldErrorProps, useFocusFieldError } from "@/components/ui/field-error";
+import type { FormError } from "@/lib/form-error";
+
+const FIELD_IDS: Record<string, string> = {
+  title: "goal-title",
+  description: "goal-description",
+  type: "goal-type",
+  indicator: "goal-indicator",
+  unitLabel: "goal-unit-label",
+  targetValue: "goal-target-value",
+  dueDate: "goal-due-date",
+  startDate: "goal-start-date",
+  successCriteria: "goal-success-criteria",
+};
 
 export type GoalFormValues = {
   title: string;
@@ -67,11 +81,12 @@ export function GoalForm({
 }: {
   initialValues?: Partial<GoalFormValues>;
   submitLabel: string;
-  onSubmit: (payload: GoalFormPayload) => Promise<string | null | void>;
+  onSubmit: (payload: GoalFormPayload) => Promise<FormError | null | void>;
 }) {
   const [values, setValues] = useState<GoalFormValues>({ ...DEFAULT_VALUES, ...initialValues });
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
+  useFocusFieldError(error, FIELD_IDS);
 
   const isCreate = !initialValues;
 
@@ -88,7 +103,7 @@ export function GoalForm({
     setError(null);
 
     if (values.unitType === "NUMBER" && !values.unitLabel.trim()) {
-      setError("Informe o rótulo da unidade (ex.: clientes, itens)");
+      setError({ message: "Informe o rótulo da unidade (ex.: clientes, itens)", field: "unitLabel" });
       return;
     }
 
@@ -137,6 +152,7 @@ export function GoalForm({
         <label htmlFor="goal-title" className="block text-sm font-medium mb-1.5">Título</label>
         <input
           id="goal-title"
+          {...fieldErrorProps(error, "title", "goal-title")}
           required
           value={values.title}
           onChange={(e) => update("title", e.target.value)}
@@ -144,18 +160,21 @@ export function GoalForm({
           className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--color-border)" }}
         />
+        <FieldError error={error} field="title" inputId="goal-title" />
       </div>
 
       <div>
         <label htmlFor="goal-description" className="block text-sm font-medium mb-1.5">Descrição</label>
         <textarea
           id="goal-description"
+          {...fieldErrorProps(error, "description", "goal-description")}
           rows={2}
           value={values.description}
           onChange={(e) => update("description", e.target.value)}
           className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--color-border)" }}
         />
+        <FieldError error={error} field="description" inputId="goal-description" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -163,6 +182,7 @@ export function GoalForm({
           <label htmlFor="goal-type" className="block text-sm font-medium mb-1.5">Tipo</label>
           <select
             id="goal-type"
+            {...fieldErrorProps(error, "type", "goal-type")}
             value={values.type}
             onChange={(e) => update("type", e.target.value)}
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"
@@ -174,11 +194,13 @@ export function GoalForm({
             <option value="TRIMESTRAL">Trimestral</option>
             <option value="ANUAL">Anual</option>
           </select>
+          <FieldError error={error} field="type" inputId="goal-type" />
         </div>
         <div>
           <label htmlFor="goal-indicator" className="block text-sm font-medium mb-1.5">Indicador</label>
           <input
             id="goal-indicator"
+            {...fieldErrorProps(error, "indicator", "goal-indicator")}
             required
             value={values.indicator}
             onChange={(e) => update("indicator", e.target.value)}
@@ -186,6 +208,7 @@ export function GoalForm({
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
+          <FieldError error={error} field="indicator" inputId="goal-indicator" />
         </div>
       </div>
 
@@ -203,15 +226,20 @@ export function GoalForm({
           />
         </div>
         {values.unitType === "NUMBER" && (
-          <input
-            required
-            aria-label="Rótulo da unidade"
-            value={values.unitLabel}
-            onChange={(e) => update("unitLabel", e.target.value)}
-            placeholder="Rótulo da unidade — ex.: clientes, itens, projetos"
-            className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-            style={{ borderColor: "var(--color-border)" }}
-          />
+          <>
+            <input
+              id="goal-unit-label"
+              {...fieldErrorProps(error, "unitLabel", "goal-unit-label")}
+              required
+              aria-label="Rótulo da unidade"
+              value={values.unitLabel}
+              onChange={(e) => update("unitLabel", e.target.value)}
+              placeholder="Rótulo da unidade — ex.: clientes, itens, projetos"
+              className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
+              style={{ borderColor: "var(--color-border)" }}
+            />
+            <FieldError error={error} field="unitLabel" inputId="goal-unit-label" />
+          </>
         )}
       </div>
 
@@ -222,6 +250,7 @@ export function GoalForm({
           </label>
           <input
             id="goal-target-value"
+            {...fieldErrorProps(error, "targetValue", "goal-target-value")}
             required
             type="number"
             step="any"
@@ -230,11 +259,13 @@ export function GoalForm({
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
+          <FieldError error={error} field="targetValue" inputId="goal-target-value" />
         </div>
         <div>
           <label htmlFor="goal-due-date" className="block text-sm font-medium mb-1.5">Prazo</label>
           <input
             id="goal-due-date"
+            {...fieldErrorProps(error, "dueDate", "goal-due-date")}
             required
             type="date"
             value={values.dueDate}
@@ -242,6 +273,7 @@ export function GoalForm({
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
+          <FieldError error={error} field="dueDate" inputId="goal-due-date" />
           <DateQuickPicks onPick={(v) => update("dueDate", v)} />
         </div>
       </div>
@@ -250,6 +282,7 @@ export function GoalForm({
         <label htmlFor="goal-start-date" className="block text-sm font-medium mb-1.5">Início</label>
         <input
           id="goal-start-date"
+          {...fieldErrorProps(error, "startDate", "goal-start-date")}
           required
           type="date"
           value={values.startDate}
@@ -257,6 +290,7 @@ export function GoalForm({
           className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--color-border)" }}
         />
+        <FieldError error={error} field="startDate" inputId="goal-start-date" />
         <DateQuickPicks onPick={(v) => update("startDate", v)} />
       </div>
 
@@ -264,6 +298,7 @@ export function GoalForm({
         <label htmlFor="goal-success-criteria" className="block text-sm font-medium mb-1.5">Critério de sucesso</label>
         <textarea
           id="goal-success-criteria"
+          {...fieldErrorProps(error, "successCriteria", "goal-success-criteria")}
           required
           rows={2}
           value={values.successCriteria}
@@ -272,9 +307,10 @@ export function GoalForm({
           className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           style={{ borderColor: "var(--color-border)" }}
         />
+        <FieldError error={error} field="successCriteria" inputId="goal-success-criteria" />
       </div>
 
-      {error && <ErrorBanner>{error}</ErrorBanner>}
+      {bannerMessage(error, FIELD_IDS) && <ErrorBanner>{bannerMessage(error, FIELD_IDS)}</ErrorBanner>}
 
       <button type="submit" disabled={saving} className="btn-primary w-full py-2.5 text-sm disabled:opacity-60">
         {saving ? "Salvando..." : submitLabel}

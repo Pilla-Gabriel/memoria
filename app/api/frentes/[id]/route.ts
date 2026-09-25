@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validationErrorResponse } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 import { isManager } from "@/lib/rbac";
 import { frenteUpdateSchema } from "@/lib/validation";
@@ -40,7 +41,7 @@ export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (reques
   const body = await request.json();
   const parsed = frenteUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+    return validationErrorResponse(parsed.error);
   }
 
   const { targetDate, ...rest } = parsed.data;
