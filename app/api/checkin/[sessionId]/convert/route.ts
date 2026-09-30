@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
@@ -7,7 +8,7 @@ import { getScopedCheckInSession } from "@/lib/base-guards";
 
 const convertSchema = z.object({
   answerId: z.string(),
-  title: z.string().min(3, "Informe um título para a tarefa"),
+  title: texto(3, "Informe um título para a tarefa"),
   description: z.string().optional().nullable(),
   dueDate: z.string().datetime({ message: "O prazo é obrigatório para confirmar a tarefa" }),
   priority: z.enum(["BAIXA", "MEDIA", "ALTA", "URGENTE"]).default("MEDIA"),

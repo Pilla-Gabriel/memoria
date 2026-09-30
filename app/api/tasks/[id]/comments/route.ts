@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { prisma } from "@/lib/prisma";
 import { withBase } from "@/lib/with-base";
-import { getScopedTask } from "@/lib/base-guards";
+import { getVisibleTask } from "@/lib/base-guards";
 
-const schema = z.object({ text: z.string().min(1) });
+const schema = z.object({ text: texto(1) });
 
 export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
 
-  const task = await getScopedTask(id);
+  const task = await getVisibleTask(id, session.user);
   if (!task) return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
 
   const body = await request.json();

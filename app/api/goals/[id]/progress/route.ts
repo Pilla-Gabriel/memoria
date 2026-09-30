@@ -4,16 +4,18 @@ import { goalProgressSchema } from "@/lib/validation";
 import { evaluateGoalStatus } from "@/lib/services/risk-engine";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
+import { getVisibleGoal } from "@/lib/base-guards";
+import { validationErrorResponse } from "@/lib/api-errors";
 
 export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
-  const goal = await prisma.goal.findUnique({ where: { id } });
+  const goal = await getVisibleGoal(id, session.user);
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
 
   const body = await request.json();
   const parsed = goalProgressSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+    return validationErrorResponse(parsed.error);
   }
 
   await prisma.goalProgress.create({

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireBaseId } from "@/lib/base-context";
-import { getActiveUserIdsWithBaseAccess } from "@/lib/base-access";
+import { getActiveUserIdsWithBaseAccess, getHomeBaseIdsByUser } from "@/lib/base-access";
 import { effectiveListFor } from "@/lib/services/personalization";
 import { notifyUser } from "@/lib/services/notifications";
 
@@ -52,6 +52,14 @@ export function isActionableAnswer(text: string): boolean {
   });
 }
 
+// Check-in é da pessoa, não da base: cada usuário só recebe sessões na sua
+// base "de casa" (ver getHomeBaseIdsByUser), mesmo com o job rodando em todas.
+async function usersAtHomeIn(baseId: string): Promise<string[]> {
+  const userIds = await getActiveUserIdsWithBaseAccess(baseId);
+  const home = await getHomeBaseIdsByUser(userIds);
+  return userIds.filter((id) => home.get(id) === baseId);
+}
+
 function startOfDay(date: Date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -100,7 +108,7 @@ async function ensureSessionForUserSlot(userId: string, slotId: string, today: D
 async function dispatchSlotSessions(date: Date, matchTime?: string) {
   const today = startOfDay(date);
   const baseId = requireBaseId();
-  const userIds = await getActiveUserIdsWithBaseAccess(baseId);
+  const userIds = await usersAtHomeIn(baseId);
 
   const created: string[] = [];
   for (const userId of userIds) {
@@ -141,7 +149,7 @@ export async function ensureWeeklyReviewSessions(
 ) {
   const today = startOfDay(date);
   const baseId = requireBaseId();
-  const userIds = await getActiveUserIdsWithBaseAccess(baseId);
+  const userIds = await usersAtHomeIn(baseId);
 
   const created: string[] = [];
   for (const userId of userIds) {

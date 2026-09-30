@@ -1,7 +1,12 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { limparFalhasLogin, loginBloqueado, registrarFalhaLogin } from "@/lib/login-throttle";
+
+class MuitasTentativas extends CredentialsSignin {
+  code = "muitas_tentativas";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -20,17 +25,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Senha", type: "password" },
       },
       authorize: async (credentials) => {
-        const email = credentials?.email;
+        const rawEmail = credentials?.email;
         const password = credentials?.password;
-        if (typeof email !== "string" || typeof password !== "string") {
+        if (typeof rawEmail !== "string" || typeof password !== "string") {
           return null;
         }
+        // Todo e-mail é gravado em minúsculas e sem espaços (lib/validation.ts).
+        const email = rawEmail.trim().toLowerCase();
+        if (loginBloqueado(email)) throw new MuitasTentativas();
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.active) return null;
-
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        const valid = user?.active ? await bcrypt.compare(password, user.passwordHash) : false;
+        if (!user || !valid) {
+          registrarFalhaLogin(email);
+          return null;
+        }
+        limparFalhasLogin(email);
 
         return {
           id: user.id,
@@ -42,10 +52,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user, trigger, session }) {
+    // O perfil e o "ativo" eram lidos só no login e ficavam presos no JWT:
+    // quem era desativado ou rebaixado seguia com o acesso antigo até a
+    // sessão expirar (achado G-14). Agora toda leitura da sessão confere o
+    // usuário no banco — desativado/excluído perde a sessão na hora, e uma
+    // troca de perfil vale na próxima requisição.
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role: string }).role;
+      }
+      if (token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { active: true, role: true, name: true },
+        });
+        if (!current?.active) return null;
+        token.role = current.role;
+        token.name = current.name;
       }
       if (trigger === "update" && session?.name) {
         token.name = session.name as string;

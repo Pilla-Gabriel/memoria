@@ -42,6 +42,16 @@ export const PATCH = withBase<{ params: Promise<{ id: string }> }>(async (reques
   }
 
   const data = parsed.data;
+  // O schema só compara as duas datas quando as duas vêm no corpo; aqui
+  // completa com a que já está salva.
+  const nextStart = data.startDate ? new Date(data.startDate) : goal.startDate;
+  const nextDue = data.dueDate ? new Date(data.dueDate) : goal.dueDate;
+  if ((data.startDate || data.dueDate) && nextDue <= nextStart) {
+    return NextResponse.json(
+      { error: "O prazo precisa ser depois da data de início", field: "dueDate" },
+      { status: 400 }
+    );
+  }
   const updateData: Record<string, unknown> = { ...data };
   delete updateData.startDate;
   delete updateData.dueDate;

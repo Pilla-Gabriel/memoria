@@ -4,6 +4,7 @@ import { extensionRequestSchema } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
 import { notifyUser } from "@/lib/services/notifications";
+import { getVisibleTask } from "@/lib/base-guards";
 
 async function notifyApprover(task: { id: string; title: string }) {
   const approver = await prisma.user.findFirst({
@@ -24,7 +25,7 @@ async function notifyApprover(task: { id: string; title: string }) {
 
 export const POST = withBase<{ params: Promise<{ id: string }> }>(async (request, ctx, session) => {
   const { id } = await ctx.params;
-  const task = await prisma.task.findUnique({ where: { id } });
+  const task = await getVisibleTask(id, session.user);
   if (!task) return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
   if (!task.dueDate) {
     return NextResponse.json({ error: "Defina um prazo antes de solicitar prorrogação" }, { status: 400 });

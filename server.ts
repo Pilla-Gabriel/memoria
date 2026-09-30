@@ -125,56 +125,66 @@ app.prepare().then(() => {
     });
   }
 
-  // Verifica a cada minuto, de segunda a sexta, se algum horário de check-in bate com o horário atual.
-  schedule("* * * * 1-5", () => {
-    forEachBase("checkAndDispatchSlots", checkAndDispatchSlots).catch((err) =>
-      console.error("[cron] erro ao disparar check-ins:", err)
-    );
-  });
+  // A instância de dev (npm run dev, porta 3001) usa o MESMO dev.db e as
+  // mesmas inscrições de push do serviço: com os jobs ligados nas duas, todo
+  // check-in/relatório nascia em dobro e as duas corriam no mesmo "procura e
+  // cria" (achado G-13 da auditoria Gengar). Em dev os jobs ficam desligados;
+  // ENABLE_JOBS=1 liga de propósito, pra testar um job localmente.
+  const jobsEnabled = !dev || process.env.ENABLE_JOBS === "1";
+  if (!jobsEnabled) {
+    console.log("> Jobs agendados desligados nesta instância de dev (ENABLE_JOBS=1 para ligar).");
+  } else {
+    // Verifica a cada minuto, de segunda a sexta, se algum horário de check-in bate com o horário atual.
+    schedule("* * * * 1-5", () => {
+      forEachBase("checkAndDispatchSlots", checkAndDispatchSlots).catch((err) =>
+        console.error("[cron] erro ao disparar check-ins:", err)
+      );
+    });
 
-  // Revisão semanal de segunda-feira às 08:30.
-  schedule("30 8 * * 1", () => {
-    forEachBase("ensureWeeklyReviewSessions(MONDAY_REVIEW)", () => ensureWeeklyReviewSessions("MONDAY_REVIEW")).catch(
-      (err) => console.error("[cron] erro ao criar revisão de segunda:", err)
-    );
-  });
+    // Revisão semanal de segunda-feira às 08:30.
+    schedule("30 8 * * 1", () => {
+      forEachBase("ensureWeeklyReviewSessions(MONDAY_REVIEW)", () => ensureWeeklyReviewSessions("MONDAY_REVIEW")).catch(
+        (err) => console.error("[cron] erro ao criar revisão de segunda:", err)
+      );
+    });
 
-  // Revisão semanal de sexta-feira às 08:30.
-  schedule("30 8 * * 5", () => {
-    forEachBase("ensureWeeklyReviewSessions(FRIDAY_REVIEW)", () => ensureWeeklyReviewSessions("FRIDAY_REVIEW")).catch(
-      (err) => console.error("[cron] erro ao criar revisão de sexta:", err)
-    );
-  });
+    // Revisão semanal de sexta-feira às 08:30.
+    schedule("30 8 * * 5", () => {
+      forEachBase("ensureWeeklyReviewSessions(FRIDAY_REVIEW)", () => ensureWeeklyReviewSessions("FRIDAY_REVIEW")).catch(
+        (err) => console.error("[cron] erro ao criar revisão de sexta:", err)
+      );
+    });
 
-  // Rascunho do relatório de Entrega Semanal — segunda-feira às 08:00.
-  schedule("0 8 * * 1", () => {
-    forEachBase("ensureWeeklyReportDrafts(SEGUNDA)", () => ensureWeeklyReportDrafts("SEGUNDA")).catch((err) =>
-      console.error("[cron] erro ao criar relatório de segunda:", err)
-    );
-  });
+    // Rascunho do relatório de Entrega Semanal — segunda-feira às 08:00.
+    schedule("0 8 * * 1", () => {
+      forEachBase("ensureWeeklyReportDrafts(SEGUNDA)", () => ensureWeeklyReportDrafts("SEGUNDA")).catch((err) =>
+        console.error("[cron] erro ao criar relatório de segunda:", err)
+      );
+    });
 
-  // Rascunho do relatório de Entrega Semanal — sexta-feira às 08:00.
-  schedule("0 8 * * 5", () => {
-    forEachBase("ensureWeeklyReportDrafts(SEXTA)", () => ensureWeeklyReportDrafts("SEXTA")).catch((err) =>
-      console.error("[cron] erro ao criar relatório de sexta:", err)
-    );
-  });
+    // Rascunho do relatório de Entrega Semanal — sexta-feira às 08:00.
+    schedule("0 8 * * 5", () => {
+      forEachBase("ensureWeeklyReportDrafts(SEXTA)", () => ensureWeeklyReportDrafts("SEXTA")).catch((err) =>
+        console.error("[cron] erro ao criar relatório de sexta:", err)
+      );
+    });
 
-  // Recalcula prazos, atrasos e risco de metas todos os dias às 00:05.
-  schedule("5 0 * * *", () => {
-    forEachBase("runDailyAlertsJob", runDailyAlertsJob).catch((err) =>
-      console.error("[cron] erro ao gerar alertas diários:", err)
-    );
-  });
+    // Recalcula prazos, atrasos e risco de metas todos os dias às 00:05.
+    schedule("5 0 * * *", () => {
+      forEachBase("runDailyAlertsJob", runDailyAlertsJob).catch((err) =>
+        console.error("[cron] erro ao gerar alertas diários:", err)
+      );
+    });
 
-  // Sincroniza frentes ligadas ao Azure DevOps a cada 2 horas, em horário
-  // comercial (seg-sex, 8h-18h) — o botão manual continua existindo como
-  // atalho para forçar uma sincronização fora desse ciclo.
-  schedule("0 8-18/2 * * 1-5", () => {
-    forEachBase("runScheduledAzureSync", runScheduledAzureSync).catch((err) =>
-      console.error("[cron] erro ao sincronizar Azure DevOps:", err)
-    );
-  });
+    // Sincroniza frentes ligadas ao Azure DevOps a cada 2 horas, em horário
+    // comercial (seg-sex, 8h-18h) — o botão manual continua existindo como
+    // atalho para forçar uma sincronização fora desse ciclo.
+    schedule("0 8-18/2 * * 1-5", () => {
+      forEachBase("runScheduledAzureSync", runScheduledAzureSync).catch((err) =>
+        console.error("[cron] erro ao sincronizar Azure DevOps:", err)
+      );
+    });
+  }
 
-  console.log("> Agendador de check-ins e alertas ativo.");
+  if (jobsEnabled) console.log("> Agendador de check-ins e alertas ativo.");
 });

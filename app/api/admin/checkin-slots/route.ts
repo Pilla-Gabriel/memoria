@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createItem, defaultsOnly, effectiveListFor } from "@/lib/services/personalization";
 
 const schema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/, "Use o formato HH:mm"),
-  label: z.string().min(2),
+  label: texto(2),
 });
 
 export async function GET(request: Request) {

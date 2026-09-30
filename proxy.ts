@@ -21,6 +21,8 @@ export default auth((req) => {
   return NextResponse.next();
 });
 
+// /uploads fica DENTRO do matcher: os anexos das tarefas eram abertos por
+// qualquer um com o link, sem login (achado G-15).
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|uploads).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

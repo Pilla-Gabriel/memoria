@@ -4,6 +4,8 @@ import { goalProgressUpdateSchema } from "@/lib/validation";
 import { evaluateGoalStatus } from "@/lib/services/risk-engine";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
+import { getVisibleGoal } from "@/lib/base-guards";
+import { validationErrorResponse } from "@/lib/api-errors";
 
 async function recomputeCurrentValue(goalId: string, excludeId?: string) {
   const latest = await prisma.goalProgress.findFirst({
@@ -15,7 +17,7 @@ async function recomputeCurrentValue(goalId: string, excludeId?: string) {
 
 export const PATCH = withBase<{ params: Promise<{ id: string; progressId: string }> }>(async (request, ctx, session) => {
   const { id, progressId } = await ctx.params;
-  const goal = await prisma.goal.findUnique({ where: { id } });
+  const goal = await getVisibleGoal(id, session.user);
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
 
   const entry = await prisma.goalProgress.findUnique({ where: { id: progressId } });
@@ -26,7 +28,7 @@ export const PATCH = withBase<{ params: Promise<{ id: string; progressId: string
   const body = await request.json();
   const parsed = goalProgressUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+    return validationErrorResponse(parsed.error);
   }
 
   await prisma.goalProgress.update({
@@ -59,7 +61,7 @@ export const PATCH = withBase<{ params: Promise<{ id: string; progressId: string
 
 export const DELETE = withBase<{ params: Promise<{ id: string; progressId: string }> }>(async (_request, ctx, session) => {
   const { id, progressId } = await ctx.params;
-  const goal = await prisma.goal.findUnique({ where: { id } });
+  const goal = await getVisibleGoal(id, session.user);
   if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
 
   const entry = await prisma.goalProgress.findUnique({ where: { id: progressId } });
