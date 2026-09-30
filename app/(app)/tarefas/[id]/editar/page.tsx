@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dateInputToISOString } from "@/lib/date";
 import { readFormError, type FormError } from "@/lib/form-error";
+import { NotFoundState } from "@/components/ui/not-found-state";
 import { TaskForm, type TaskFormValues } from "@/components/tasks/task-form";
 
 export default function EditarTarefaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,12 +13,17 @@ export default function EditarTarefaPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const [initialValues, setInitialValues] = useState<TaskFormValues | null>(null);
   const [error, setError] = useState<FormError | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch(`/api/tasks/${id}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        if (!data?.task) {
+          setNotFound(true);
+          return;
+        }
         const t = data.task;
         setInitialValues({
           title: t.title,
@@ -28,6 +34,10 @@ export default function EditarTarefaPage({ params }: { params: Promise<{ id: str
         });
       });
   }, [id]);
+
+  if (notFound) {
+    return <NotFoundState title="Tarefa não encontrada" backHref="/tarefas" backLabel="Voltar para tarefas" />;
+  }
 
   async function handleSubmit(values: TaskFormValues) {
     setSaving(true);
@@ -56,10 +66,10 @@ export default function EditarTarefaPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href={`/tarefas/${id}`} className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href={`/tarefas/${id}`} className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Editar tarefa</h1>
+        <h1 className="page-title mt-2">Editar tarefa</h1>
       </div>
 
       {initialValues ? (

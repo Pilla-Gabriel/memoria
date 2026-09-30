@@ -28,7 +28,7 @@ export function StatCard({
 
   const content = (
     <>
-      <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: toneFg[tone] }}>
+      <span className="text-[0.625rem] font-bold uppercase tracking-wide" style={{ color: toneFg[tone] }}>
         {label}
       </span>
       <p
@@ -42,7 +42,7 @@ export function StatCard({
 
   if (href) {
     return (
-      <Link href={href} className="flex flex-col p-4 md:p-5 hover:bg-black/[0.02] transition-colors">
+      <Link href={href} className="flex flex-col p-4 md:p-5 hover:bg-[var(--color-hover)] transition-colors">
         {content}
       </Link>
     );

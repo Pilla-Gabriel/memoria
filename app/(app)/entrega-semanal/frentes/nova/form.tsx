@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Copy } from "lucide-react";
 import { dateInputToISOString } from "@/lib/date";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { FieldError, bannerMessage, fieldErrorProps, useFocusFieldError } from "@/components/ui/field-error";
 import { readFormError, type FormError } from "@/lib/form-error";
@@ -37,7 +38,13 @@ export function NovaFrenteForm() {
   const [sourceDetail, setSourceDetail] = useState("");
   const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
+  // Trava na hora: o "disabled" só aparece na próxima renderização e cliques
+  // rápidos seguidos gravavam o registro em dobro (G-02).
+  const savingRef = useRef(false);
   const [duplicatedFromName, setDuplicatedFromName] = useState<string | null>(null);
+  useUnsavedChanges(
+    !saving && Boolean(name.trim() || description.trim() || indicator.trim() || unit.trim() || targetValue || targetDate)
+  );
   useFocusFieldError(error, FIELD_IDS);
 
   useEffect(() => {
@@ -61,6 +68,8 @@ export function NovaFrenteForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
 
@@ -81,6 +90,7 @@ export function NovaFrenteForm() {
     });
 
     setSaving(false);
+    savingRef.current = false;
     if (!res.ok) {
       setError(await readFormError(res, "Não foi possível criar a frente."));
       return;
@@ -92,10 +102,10 @@ export function NovaFrenteForm() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/entrega-semanal" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Nova frente</h1>
+        <h1 className="page-title mt-2">Nova frente</h1>
       </div>
 
       {duplicatedFromName && (
@@ -108,6 +118,7 @@ export function NovaFrenteForm() {
       )}
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+        <p className="required-legend">obrigatório</p>
         <div>
           <label htmlFor="frente-name" className="block text-sm font-medium mb-1.5">Nome da frente</label>
           <input

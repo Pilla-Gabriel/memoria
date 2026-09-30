@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useEffect, useRef, useState, use as usePromise } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Paperclip, Send, History, CalendarClock, Pencil, Trash2 } from "lucide-react";
-import { StatusBadge, PriorityBadge, NeedsDueDateBadge } from "@/components/tasks/badges";
+import { StatusBadge, PriorityBadge, NeedsDueDateBadge, TASK_STATUS_LABEL } from "@/components/tasks/badges";
 import { dateInputToISOString } from "@/lib/date";
+import { NotFoundState } from "@/components/ui/not-found-state";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
+import { ATTACHMENT_ACCEPT, ATTACHMENT_MAX_MB } from "@/lib/attachments";
 
 type Person = { id: string; name: string };
 type Comment = { id: string; text: string; createdAt: string; user: Person };
@@ -42,7 +46,14 @@ type TaskDetail = {
   extensionRequests: Extension[];
 };
 
-const STATUS_OPTIONS = ["PENDENTE", "EM_ANDAMENTO", "AGUARDANDO_TERCEIROS", "CONCLUIDA", "CANCELADA", "ATRASADA"];
+// ATRASADA fica de fora: quem marca é o sistema, quando o prazo passa.
+const STATUS_OPTIONS = ["PENDENTE", "EM_ANDAMENTO", "AGUARDANDO_TERCEIROS", "CONCLUIDA", "CANCELADA"];
+
+const EXTENSION_STATUS_LABEL: Record<string, string> = {
+  PENDENTE_APROVACAO: "Aguardando aprovação",
+  APROVADA: "Aprovada",
+  REJEITADA: "Rejeitada",
+};
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
@@ -57,9 +68,23 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [justification, setJustification] = useState("");
   const [extensionError, setExtensionError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [sendingComment, setSendingComment] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [requestingExtension, setRequestingExtension] = useState(false);
+  // O "disabled" só chega na próxima renderização: cliques em sequência
+  // rápida ainda passavam e gravavam em dobro (G-02). A ref trava na hora.
+  const inFlight = useRef(new Set<string>());
 
   async function load() {
     const res = await fetch(`/api/tasks/${id}`);
+    if (!res.ok) {
+      setNotFound(true);
+      return;
+    }
     const data = await res.json();
     setTask(data.task);
     setAuditLog(data.auditLog ?? []);
@@ -70,50 +95,94 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  useUnsavedChanges(comment.trim().length > 0 || justification.trim().length > 0);
+
+  if (notFound) {
+    return <NotFoundState title="Tarefa não encontrada" backHref="/tarefas" backLabel="Voltar para tarefas" />;
+  }
   if (!task) return <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>;
 
   async function updateStatus(status: string) {
-    await fetch(`/api/tasks/${id}`, {
+    setStatusError(null);
+    const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setStatusError(json.error ?? "Não foi possível alterar o status.");
+    }
     load();
   }
 
+  // O botão continuava ativo durante o envio: dois cliques gravavam o mesmo
+  // comentário duas vezes (achado G-02).
   async function submitComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!comment.trim()) return;
-    await fetch(`/api/tasks/${id}/comments`, {
+    if (!comment.trim() || inFlight.current.has("comment")) return;
+    inFlight.current.add("comment");
+    setSendingComment(true);
+    setCommentError(null);
+    const res = await fetch(`/api/tasks/${id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: comment }),
     });
+    setSendingComment(false);
+    inFlight.current.delete("comment");
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setCommentError(json.error ?? "Não foi possível enviar o comentário.");
+      return;
+    }
     setComment("");
     load();
   }
 
   async function uploadFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || inFlight.current.has("upload")) return;
+    setUploadError(null);
+    if (file.size > ATTACHMENT_MAX_MB * 1024 * 1024) {
+      setUploadError(`O arquivo passa de ${ATTACHMENT_MAX_MB} MB. Envie um arquivo menor.`);
+      input.value = "";
+      return;
+    }
+    inFlight.current.add("upload");
+    setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    await fetch(`/api/tasks/${id}/attachments`, { method: "POST", body: formData });
+    const res = await fetch(`/api/tasks/${id}/attachments`, { method: "POST", body: formData });
+    setUploading(false);
+    inFlight.current.delete("upload");
+    input.value = "";
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setUploadError(json.error ?? "Não foi possível anexar o arquivo.");
+      return;
+    }
     load();
   }
 
   async function requestExtension(e: React.FormEvent) {
     e.preventDefault();
+    if (inFlight.current.has("extension")) return;
     setExtensionError(null);
     if (!newDueDate || justification.trim().length < 10) {
       setExtensionError("Informe a nova data e uma justificativa com pelo menos 10 caracteres.");
       return;
     }
+    inFlight.current.add("extension");
+    setRequestingExtension(true);
     const res = await fetch(`/api/tasks/${id}/extensions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ newDueDate: dateInputToISOString(newDueDate), justification }),
     });
+    setRequestingExtension(false);
+    inFlight.current.delete("extension");
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setExtensionError(json.error ?? "Não foi possível registrar a prorrogação.");
@@ -147,7 +216,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/tarefas" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
       </div>
@@ -220,12 +289,22 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           className="rounded-xl border px-3.5 py-2.5 text-sm outline-none bg-transparent"
           style={{ borderColor: "var(--color-border)" }}
         >
+          {task.status === "ATRASADA" && (
+            <option value="ATRASADA" disabled>
+              {TASK_STATUS_LABEL.ATRASADA} (automático)
+            </option>
+          )}
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
-              {s.replaceAll("_", " ")}
+              {TASK_STATUS_LABEL[s] ?? s}
             </option>
           ))}
         </select>
+        {statusError && (
+          <div className="mt-2">
+            <ErrorBanner>{statusError}</ErrorBanner>
+          </div>
+        )}
       </div>
 
       {canExtend && (
@@ -245,6 +324,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <div className="flex gap-3 flex-wrap">
               <input
                 type="date"
+                aria-label="Nova data de prazo"
                 value={newDueDate}
                 onChange={(e) => setNewDueDate(e.target.value)}
                 className="rounded-xl border px-3.5 py-2.5 text-sm outline-none"
@@ -253,6 +333,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             <textarea
               rows={2}
+              aria-label="Justificativa da prorrogação"
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
               placeholder="Justificativa (obrigatória)"
@@ -260,8 +341,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               style={{ borderColor: "var(--color-border)" }}
             />
             {extensionError && <p className="text-xs" style={{ color: "var(--badge-danger-fg)" }}>{extensionError}</p>}
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Solicitar novo prazo
+            <button
+              type="submit"
+              disabled={requestingExtension}
+              className="btn-primary px-4 py-2 text-sm disabled:opacity-60"
+            >
+              {requestingExtension ? "Enviando..." : "Solicitar novo prazo"}
             </button>
           </form>
 
@@ -274,7 +359,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     <strong>{new Date(ext.newDueDate).toLocaleDateString("pt-BR")}</strong> — {ext.justification}
                   </p>
                   <p className="mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                    Status: {ext.status.replaceAll("_", " ")}
+                    Status: {EXTENSION_STATUS_LABEL[ext.status] ?? ext.status}
                     {ext.approvedBy ? ` · por ${ext.approvedBy.name}` : ""}
                   </p>
                   {isManager && ext.status === "PENDENTE_APROVACAO" && (
@@ -305,7 +390,22 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         <h2 className="font-semibold mb-3 flex items-center gap-2">
           <Paperclip size={17} /> Anexos
         </h2>
-        <input type="file" onChange={uploadFile} className="text-sm mb-3" />
+        <input
+          type="file"
+          aria-label="Anexar arquivo"
+          accept={ATTACHMENT_ACCEPT}
+          onChange={uploadFile}
+          disabled={uploading}
+          className="text-sm mb-1 disabled:opacity-60"
+        />
+        <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
+          {uploading ? "Enviando arquivo..." : `Até ${ATTACHMENT_MAX_MB} MB: imagens, PDF, documentos do Office, texto e ZIP.`}
+        </p>
+        {uploadError && (
+          <div className="mb-3">
+            <ErrorBanner>{uploadError}</ErrorBanner>
+          </div>
+        )}
         <ul className="space-y-1.5 text-sm">
           {task.attachments.map((a) => (
             <li key={a.id}>
@@ -347,10 +447,21 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             className="flex-1 rounded-xl border px-3.5 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
-          <button type="submit" className="btn-primary px-4" aria-label="Enviar">
+          <button
+            type="submit"
+            disabled={sendingComment}
+            aria-busy={sendingComment}
+            aria-label={sendingComment ? "Enviando comentário" : "Enviar"}
+            className="btn-primary px-4 disabled:opacity-60"
+          >
             <Send size={16} />
           </button>
         </form>
+        {commentError && (
+          <div className="mt-2">
+            <ErrorBanner>{commentError}</ErrorBanner>
+          </div>
+        )}
       </div>
 
       <div className="card p-6">

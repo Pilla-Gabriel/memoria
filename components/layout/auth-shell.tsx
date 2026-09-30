@@ -11,7 +11,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <Logo variant="onDark" />
       </div>
 
-      <div className="flex-1 flex flex-col md:flex-row">
+      <main className="flex-1 flex flex-col md:flex-row">
         <div
           className="relative flex flex-col justify-between gap-8 px-8 py-10 md:w-1/2 md:px-16 md:py-16 border-b md:border-b-0 md:border-r"
           style={{ borderColor: "var(--color-text)" }}
@@ -50,7 +50,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">{children}</div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

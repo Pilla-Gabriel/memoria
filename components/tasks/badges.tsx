@@ -16,6 +16,10 @@ const PRIORITY_STYLE: Record<string, { label: string; tone: BadgeTone }> = {
   URGENTE: { label: "Urgente", tone: "danger" },
 };
 
+export const TASK_STATUS_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_STYLE).map(([k, v]) => [k, v.label])
+);
+
 export function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLE[status] ?? STATUS_STYLE.PENDENTE;
   return <Badge tone={s.tone}>{s.label}</Badge>;

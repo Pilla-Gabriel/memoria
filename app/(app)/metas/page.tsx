@@ -47,7 +47,7 @@ function MetasList() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Metas</h1>
+        <h1 className="page-title">Metas</h1>
         <Link href="/metas/nova" className="btn-primary px-4 py-2.5 text-sm flex items-center gap-2 w-fit">
           <Plus size={16} /> Nova meta
         </Link>

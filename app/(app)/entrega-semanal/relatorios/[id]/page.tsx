@@ -3,6 +3,7 @@
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { Download, AlertTriangle, Sparkles } from "lucide-react";
+import { NotFoundState } from "@/components/ui/not-found-state";
 import { RiskBadge, ReportStatusBadge } from "@/components/entrega-semanal/badges";
 
 type FrenteComparison = {
@@ -35,6 +36,7 @@ const KIND_LABEL: Record<string, string> = { SEGUNDA: "Segunda-feira", SEXTA: "S
 export default function WeeklyReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
   const [data, setData] = useState<ReportData | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [hoje, setHoje] = useState("");
   const [semana, setSemana] = useState("");
   const [vitoria, setVitoria] = useState("");
@@ -43,6 +45,10 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
 
   async function load() {
     const res = await fetch(`/api/weekly-reports/${id}`);
+    if (!res.ok) {
+      setNotFound(true);
+      return;
+    }
     const json: ReportData = await res.json();
     setData(json);
     setHoje(json.report.hoje ?? "");
@@ -70,6 +76,11 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  if (notFound) {
+    return (
+      <NotFoundState title="Relatório não encontrado" backHref="/entrega-semanal" backLabel="Voltar para Entrega Semanal" />
+    );
+  }
   if (!data) return <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>;
 
   async function save(status?: "PUBLICADO") {
@@ -86,7 +97,7 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/entrega-semanal" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <a
@@ -101,7 +112,7 @@ export default function WeeklyReportPage({ params }: { params: Promise<{ id: str
 
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-2xl font-bold">{KIND_LABEL[data.report.kind]}</h1>
+          <h1 className="page-title">{KIND_LABEL[data.report.kind]}</h1>
           <ReportStatusBadge status={data.report.status} />
         </div>
         <p style={{ color: "var(--color-text-secondary)" }}>

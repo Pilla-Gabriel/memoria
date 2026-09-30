@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveBaseId } from "@/lib/active-base";
 import { runWithBase } from "@/lib/base-context";
 import { MessageCircleQuestion, CheckCircle2, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const KIND_LABEL: Record<string, string> = {
   DAILY: "Check-in diário",
@@ -35,7 +36,7 @@ export default async function CheckInPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Check-in</h1>
+        <h1 className="page-title mb-1">Check-in</h1>
         <p style={{ color: "var(--color-text-secondary)" }}>
           Responda com sinceridade — o que você disser aqui pode virar tarefa com prazo.
         </p>
@@ -86,7 +87,7 @@ export default async function CheckInPage() {
         <div className="card divide-y" style={{ borderColor: "var(--color-border)" }}>
           {history.length === 0 && (
             <p className="p-5 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Nenhum check-in respondido ainda.
+              Nenhum check-in no histórico ainda.
             </p>
           )}
           {history.map((s) => (
@@ -94,13 +95,16 @@ export default async function CheckInPage() {
               <div className="flex items-center gap-3">
                 <Clock size={16} style={{ color: "var(--color-text-secondary)" }} />
                 <div>
-                  <p className="text-sm font-medium">{KIND_LABEL[s.kind]}</p>
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    {KIND_LABEL[s.kind]}
+                    {s.status === "IGNORADO" ? <Badge tone="warning">Ignorado</Badge> : <Badge tone="success">Respondido</Badge>}
+                  </p>
                   <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
                     {new Date(s.date).toLocaleDateString("pt-BR")} · {s.answers.length} resposta(s)
                   </p>
                 </div>
               </div>
-              <Link href={`/checkin/${s.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+              <Link href={`/checkin/${s.id}`} className="inline-flex min-h-6 min-w-11 items-center justify-end text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

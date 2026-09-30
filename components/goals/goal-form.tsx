@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
+import { useRef, useState } from "react";
 import { dateInputToISOString } from "@/lib/date";
 import { DateQuickPicks } from "@/components/ui/date-quick-picks";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -84,9 +85,14 @@ export function GoalForm({
   onSubmit: (payload: GoalFormPayload) => Promise<FormError | null | void>;
 }) {
   const [values, setValues] = useState<GoalFormValues>({ ...DEFAULT_VALUES, ...initialValues });
+  const [startingValues] = useState(() => JSON.stringify({ ...DEFAULT_VALUES, ...initialValues }));
   const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
+  // Trava na hora: o "disabled" só aparece na próxima renderização e cliques
+  // rápidos seguidos gravavam o registro em dobro (G-02).
+  const savingRef = useRef(false);
   useFocusFieldError(error, FIELD_IDS);
+  useUnsavedChanges(!saving && JSON.stringify(values) !== startingValues);
 
   const isCreate = !initialValues;
 
@@ -107,6 +113,8 @@ export function GoalForm({
       return;
     }
 
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     const result = await onSubmit({
       title: values.title,
@@ -121,11 +129,13 @@ export function GoalForm({
       successCriteria: values.successCriteria,
     });
     setSaving(false);
+    savingRef.current = false;
     if (result) setError(result);
   }
 
   return (
     <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+      <p className="required-legend">obrigatório</p>
       {isCreate && (
         <div>
           <label className="block text-sm font-medium mb-1.5">Modelos</label>

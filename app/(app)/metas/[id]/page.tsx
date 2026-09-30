@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useEffect, useRef, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Trash2, Info } from "lucide-react";
 import { GoalStatusBadge, GoalTypeLabel } from "@/components/goals/goal-status-badge";
+import { NotFoundState } from "@/components/ui/not-found-state";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type ProgressEntry = {
@@ -46,11 +48,16 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = usePromise(params);
   const router = useRouter();
   const [goal, setGoal] = useState<GoalDetail | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [progressError, setProgressError] = useState<string | null>(null);
   const [value, setValue] = useState("");
   const [percentMode, setPercentMode] = useState(false);
   const [percentValue, setPercentValue] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Trava na hora: o "disabled" só aparece na próxima renderização e cliques
+  // rápidos seguidos gravavam o registro em dobro (G-02).
+  const savingRef = useRef(false);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingProgressId, setEditingProgressId] = useState<string | null>(null);
@@ -59,6 +66,10 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
 
   async function load() {
     const res = await fetch(`/api/goals/${id}`);
+    if (!res.ok) {
+      setNotFound(true);
+      return;
+    }
     const data = await res.json();
     setGoal(data.goal);
   }
@@ -68,6 +79,9 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  if (notFound) {
+    return <NotFoundState title="Meta não encontrada" backHref="/metas" backLabel="Voltar para metas" />;
+  }
   if (!goal) return <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>;
 
   const computedFromPercent =
@@ -77,13 +91,22 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
     e.preventDefault();
     const finalValue = goal!.unitType === "NUMBER" && percentMode ? computedFromPercent : Number(value);
     if (finalValue === null || Number.isNaN(finalValue)) return;
+    setProgressError(null);
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
-    await fetch(`/api/goals/${id}/progress`, {
+    const res = await fetch(`/api/goals/${id}/progress`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: finalValue, note: note || null }),
     });
     setSaving(false);
+    savingRef.current = false;
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setProgressError(json.error ?? "Não foi possível registrar o avanço.");
+      return;
+    }
     setValue("");
     setPercentValue("");
     setNote("");
@@ -104,11 +127,17 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   async function saveEditProgress(progressId: string) {
-    await fetch(`/api/goals/${id}/progress/${progressId}`, {
+    setProgressError(null);
+    const res = await fetch(`/api/goals/${id}/progress/${progressId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: Number(editValue), note: editNote || null }),
     });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setProgressError(json.error ?? "Não foi possível salvar o avanço.");
+      return;
+    }
     setEditingProgressId(null);
     load();
   }
@@ -134,7 +163,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/metas" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <div className="flex items-center gap-3">
@@ -264,6 +293,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
           ) : (
             <input
               type="number"
+                min={0}
               step="any"
               required
               aria-label={`Novo valor (${goal.unit})`}
@@ -286,6 +316,11 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
             {saving ? "Salvando..." : "Atualizar"}
           </button>
         </form>
+        {progressError && (
+          <div className="mb-4">
+            <ErrorBanner>{progressError}</ErrorBanner>
+          </div>
+        )}
 
         <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--color-text-secondary)" }}>
           Histórico
@@ -297,6 +332,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="number"
+                min={0}
                     step="any"
                     aria-label="Valor"
                     value={editValue}

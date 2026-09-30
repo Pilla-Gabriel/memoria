@@ -26,10 +26,10 @@ export default function NovaMetaPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href="/metas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/metas" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Nova meta</h1>
+        <h1 className="page-title mt-2">Nova meta</h1>
       </div>
 
       <GoalForm submitLabel="Criar meta" onSubmit={handleSubmit} />

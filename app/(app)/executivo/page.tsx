@@ -96,7 +96,7 @@ export default function ExecutivoPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Dashbord</h1>
+        <h1 className="page-title mb-1">Dashboard Executivo</h1>
         <p style={{ color: "var(--color-text-secondary)" }}>Indicadores consolidados de produtividade e accountability.</p>
       </div>
 

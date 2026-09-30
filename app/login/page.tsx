@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { PasswordInput } from "@/components/ui/password-input";
 
 function LoginForm() {
   const router = useRouter();
@@ -39,7 +40,11 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("E-mail ou senha inválidos.");
+      setError(
+        result.code === "muitas_tentativas"
+          ? "Muitas tentativas seguidas. Aguarde 15 minutos e tente de novo."
+          : "E-mail ou senha inválidos."
+      );
       return;
     }
 
@@ -54,7 +59,7 @@ function LoginForm() {
         Acesse seu painel de compromissos e cobranças.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form data-no-required-mark onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1.5" htmlFor="email">
             E-mail
@@ -62,6 +67,7 @@ function LoginForm() {
           <input
             id="email"
             type="email"
+            autoComplete="username"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -75,9 +81,9 @@ function LoginForm() {
           <label className="block text-sm font-medium mb-1.5" htmlFor="password">
             Senha
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

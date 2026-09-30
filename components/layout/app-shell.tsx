@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import type { ReactNode } from "react";
 import { Header } from "@/components/layout/header";
 import type { NavItem } from "@/lib/navigation";
 
 type AccessibleBase = { id: string; slug: string; name: string; color: string };
 
+// Sem menu lateral: a navegação é a faixa horizontal do cabeçalho, como no
+// protótipo de referência (Lovable weekly-wrapup) — no celular ela rola de lado.
 export function AppShell({
   navItems,
   name,
@@ -24,22 +25,23 @@ export function AppShell({
   accessibleBases: AccessibleBase[];
   children: ReactNode;
 }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--color-bg)" }}>
+      {/* 16 paradas de Tab (barra + abas) antes do conteúdo em toda página. */}
+      <a href="#conteudo" className="skip-link">
+        Pular para o conteúdo
+      </a>
       <Header
+        navItems={navItems}
         name={name}
         role={role}
         unreadCount={unreadCount}
         activeBase={activeBase}
         accessibleBases={accessibleBases}
-        onMenuClick={() => setMobileOpen(true)}
       />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar items={navItems} open={mobileOpen} onClose={() => setMobileOpen(false)} />
-        <main className="flex-1 p-4 md:p-8 max-w-[1400px] w-full mx-auto overflow-y-auto">{children}</main>
-      </div>
+      <main id="conteudo" tabIndex={-1} className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-6 md:px-6 md:py-7">
+        {children}
+      </main>
     </div>
   );
 }
