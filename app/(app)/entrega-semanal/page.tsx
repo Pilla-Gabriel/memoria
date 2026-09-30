@@ -72,7 +72,7 @@ export default async function EntregaSemanalPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Entrega Semanal</h1>
+          <h1 className="page-title mb-1">Entrega Semanal</h1>
           <p style={{ color: "var(--color-text-secondary)" }}>
             Relatório curto, quantitativo e verificável — segunda e sexta-feira.
           </p>
@@ -189,7 +189,7 @@ export default async function EntregaSemanalPage() {
                 </p>
                 <ReportStatusBadge status={r.status} />
               </div>
-              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+              <Link href={`/entrega-semanal/relatorios/${r.id}`} className="inline-flex min-h-6 min-w-11 items-center justify-end text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

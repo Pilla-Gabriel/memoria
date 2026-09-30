@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useId, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Menu, Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
+import { Bell, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
-import { initialsForName, hexToRgba, readableBadgeColors } from "@/lib/base-color";
+import { initialsForName, readableBadgeColors } from "@/lib/base-color";
 import { Logo } from "@/components/brand/logo";
+import type { NavItem } from "@/lib/navigation";
+
+// Cabeçalho de duas faixas do protótipo de referência (Lovable weekly-wrapup):
+// barra azul-marinho de 40px (logo à esquerda; base, tema, alertas, usuário e
+// sair em células à direita) + faixa branca com a navegação horizontal. A
+// referência pinta o texto da barra com --primary-foreground (azul-escuro
+// sobre azul-marinho, 1.47:1); aqui é branco, que é a intenção visível.
 
 // Tempo em que o botão "Confirmar" fica desabilitado após abrir o passo de
 // confirmação — pequeno o bastante para não incomodar quem está prestando
@@ -28,6 +35,9 @@ function unreadLabel(count: number) {
 
 type AccessibleBase = { id: string; slug: string; name: string; color: string };
 
+// Célula da barra superior: altura cheia, separada por filete claro.
+const CELL = "flex h-full items-center border-l border-white/15 text-white/75 transition-colors hover:text-white";
+
 function BaseIndicator({
   activeBase,
   accessibleBases,
@@ -46,6 +56,8 @@ function BaseIndicator({
   // (base errada → Confirmar) antes mesmo do texto aparecer.
   const [confirmReady, setConfirmReady] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
   const canSwitch = accessibleBases.length > 1;
 
   useEffect(() => {
@@ -55,8 +67,20 @@ function BaseIndicator({
         setPending(null);
       }
     }
+    // Esc fecha e devolve o foco ao botão — antes o painel se anunciava como
+    // role="menu" sem nenhum teclado de menu (auditoria Impeccable 2026-09-29).
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape" || !ref.current?.contains(document.activeElement)) return;
+      setOpen(false);
+      setPending(null);
+      triggerRef.current?.focus();
+    }
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -86,71 +110,58 @@ function BaseIndicator({
     }
   }
 
-  const badge = (
-    <span
-      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-      style={readableBadgeColors(activeBase.color)}
-    >
-      {initialsForName(activeBase.name)}
-    </span>
+  // A base é a informação mais consequente do cabeçalho (define que dados
+  // você está vendo/criando): leva a cor da própria base no quadradinho.
+  const content = (
+    <>
+      <span
+        className="flex size-6 shrink-0 items-center justify-center text-[0.625rem] font-bold"
+        style={readableBadgeColors(activeBase.color)}
+      >
+        {initialsForName(activeBase.name)}
+      </span>
+      <span className="hidden flex-col text-left leading-tight sm:flex">
+        <span className="text-[0.5625rem] font-semibold uppercase text-white/65">Base</span>
+        <span className="text-xs font-semibold text-white">{activeBase.name}</span>
+      </span>
+    </>
   );
-
-  // Pilula com o tom da própria base — o indicador de base é a informação
-  // mais consequente do cabeçalho (define que dados você está vendo/criando)
-  // e não pode competir visualmente em pé de igualdade com ícones
-  // secundários como tema e sino.
-  const pillStyle = {
-    background: hexToRgba(activeBase.color, 0.12),
-    borderColor: hexToRgba(activeBase.color, 0.35),
-  };
 
   if (!canSwitch) {
     return (
       <div
-        className="flex items-center gap-2 px-2.5 py-1 rounded-full border"
-        style={pillStyle}
+        className={`${CELL} gap-2 px-3`}
         aria-label={`Base ativa: ${activeBase.name}`}
         title="Sua conta só tem acesso a esta base."
       >
-        {badge}
-        <div className="hidden sm:flex flex-col leading-tight text-left">
-          <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-            Base
-          </span>
-          <span className="text-sm font-bold">{activeBase.name}</span>
-        </div>
+        {content}
       </div>
     );
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative h-full" ref={ref}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => {
           setOpen((o) => !o);
           setPending(null);
         }}
-        className="flex items-center gap-2 px-2.5 py-1 rounded-full border hover:brightness-95"
-        style={pillStyle}
-        aria-haspopup="menu"
+        className={`${CELL} gap-2 px-3`}
         aria-expanded={open}
+        aria-controls={panelId}
+        aria-label={`Base ativa: ${activeBase.name}. Trocar de base`}
       >
-        {badge}
-        <div className="hidden sm:flex flex-col leading-tight text-left">
-          <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-            Base
-          </span>
-          <span className="text-sm font-bold">{activeBase.name}</span>
-        </div>
-        <ChevronDown size={15} style={{ color: "var(--color-text-secondary)" }} />
+        {content}
+        <ChevronDown className="size-3 text-white/60" />
       </button>
 
       {open && (
         <div
-          role="menu"
-          className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border shadow-lg z-40 overflow-hidden"
-          style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
+          id={panelId}
+          className="absolute right-0 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-md border shadow-lg z-40 overflow-hidden"
+          style={{ background: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
         >
           {pending ? (
             <div className="p-3.5">
@@ -171,7 +182,7 @@ function BaseIndicator({
                   type="button"
                   onClick={() => setPending(null)}
                   disabled={switching}
-                  className="flex-1 py-1.5 text-xs rounded-lg border"
+                  className="flex-1 py-1.5 text-xs rounded-md border"
                   style={{ borderColor: "var(--color-border)" }}
                 >
                   Cancelar
@@ -185,17 +196,18 @@ function BaseIndicator({
                   <button
                     type="button"
                     onClick={() => (base.id === activeBase.id ? setOpen(false) : setPending(base))}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm hover:bg-black/5 text-left"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm hover:bg-[var(--color-hover)] text-left"
+                    aria-current={base.id === activeBase.id ? "true" : undefined}
                   >
                     <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                      className="flex size-6 items-center justify-center text-[0.625rem] font-bold shrink-0"
                       style={readableBadgeColors(base.color)}
                     >
                       {initialsForName(base.name)}
                     </span>
                     <span className="flex-1">{base.name}</span>
                     {base.id === activeBase.id && (
-                      <span className="text-[10px] font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+                      <span className="text-[0.625rem] font-semibold" style={{ color: "var(--color-primary-ink)" }}>
                         atual
                       </span>
                     )}
@@ -211,24 +223,47 @@ function BaseIndicator({
 }
 
 export function Header({
+  navItems,
   name,
   role,
   unreadCount,
   activeBase,
   accessibleBases,
-  onMenuClick,
 }: {
+  navItems: NavItem[];
   name: string;
   role: string;
   unreadCount: number;
   activeBase: AccessibleBase;
   accessibleBases: AccessibleBase[];
-  onMenuClick: () => void;
 }) {
+  const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [liveUnreadCount, setLiveUnreadCount] = useState(unreadCount);
   const [announcement, setAnnouncement] = useState("");
   const lastCountRef = useRef(unreadCount);
+  const navRef = useRef<HTMLElement>(null);
+  const [navOverflow, setNavOverflow] = useState(false);
+
+  // No celular a faixa tem ~940px em 375px de tela: a aba ativa (Auditoria,
+  // Configurações...) ficava fora da vista. Centraliza a aba ativa na faixa
+  // (só rolagem horizontal da própria faixa, a página não se mexe) e marca
+  // se ainda sobra conteúdo à direita para mostrar o degradê.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
+    if (active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+    const update = () => setNavOverflow(nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 4);
+    const frame = requestAnimationFrame(update);
+    nav.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      nav.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     setLiveUnreadCount(unreadCount);
@@ -258,78 +293,107 @@ export function Header({
   }, []);
 
   return (
-    <header
-      className="h-16 flex items-center justify-between px-4 md:px-6 border-b sticky top-0 z-30"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
-    >
-      <div className="flex items-center gap-3 md:gap-4 min-w-0">
-        {/* Abaixo de sm não cabe logo + wordmark + menu + base + 3 ícones em
-            375px — a pílula da base passava por cima do botão de tema. */}
-        <span className="shrink-0 sm:hidden">
-          <Logo showWordmark={false} />
-        </span>
-        <span className="shrink-0 hidden sm:block">
-          <Logo />
-        </span>
-        <button
-          className="md:hidden min-w-11 min-h-11 flex items-center justify-center shrink-0"
-          onClick={onMenuClick}
-          aria-label="Abrir menu"
-        >
-          <Menu size={22} />
-        </button>
-        <BaseIndicator activeBase={activeBase} accessibleBases={accessibleBases} />
+    <header className="sticky top-0 z-30" style={{ background: "var(--color-bg)" }}>
+      <div className="topbar" style={{ background: "var(--color-primary-dark)" }}>
+        <div className="mx-auto flex h-11 max-w-[1320px] items-center justify-between px-4 md:h-10 md:px-6">
+          <Link href="/dashboard" aria-label="MEMÓRIA — início" className="shrink-0">
+            <span className="sm:hidden">
+              <Logo variant="onDark" showWordmark={false} />
+            </span>
+            <span className="hidden sm:block">
+              <Logo variant="onDark" />
+            </span>
+          </Link>
+
+          <div className="flex h-full min-w-0 items-center border-r border-white/15">
+            <BaseIndicator activeBase={activeBase} accessibleBases={accessibleBases} />
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`${CELL} w-10 justify-center max-sm:hidden`}
+              aria-label="Alternar tema"
+              title="Alternar tema claro/escuro"
+            >
+              {theme === "DARK" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </button>
+
+            <Link
+              href="/alertas"
+              className={`${CELL} relative w-10 justify-center`}
+              aria-label={
+                liveUnreadCount > 0
+                  ? `Alertas, ${liveUnreadCount === 1 ? "1 não lido" : `${liveUnreadCount} não lidos`}`
+                  : "Alertas"
+              }
+              title={liveUnreadCount > 0 ? unreadLabel(liveUnreadCount) : "Alertas"}
+            >
+              <Bell className="size-4" />
+              {liveUnreadCount > 0 && (
+                <span aria-hidden="true" className="absolute right-3 top-2 size-1.5" style={{ background: "var(--color-accent)" }} />
+              )}
+            </Link>
+            <span role="status" aria-live="polite" className="sr-only">
+              {announcement}
+            </span>
+
+            <div className={`${CELL} gap-2 px-3 text-xs font-semibold hover:text-white/75`} title={`${name} · ${ROLE_LABEL[role] ?? role}`}>
+              <span className="flex size-6 items-center justify-center bg-white/10 text-[0.625rem] text-white">
+                {initialsForName(name)}
+              </span>
+              <span className="hidden flex-col leading-tight md:flex">
+                <span className="text-white">{name}</span>
+                <span className="text-[0.5625rem] font-semibold uppercase text-white/65">{ROLE_LABEL[role] ?? role}</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className={`${CELL} w-10 justify-center`}
+              aria-label="Sair"
+              title="Sair"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <button
-          onClick={toggleTheme}
-          className="rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
-          aria-label="Alternar tema"
-          title="Alternar tema claro/escuro"
+      <div className="relative border-b" style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <nav
+          ref={navRef}
+          className="main-nav mx-auto flex max-w-[1320px] gap-6 overflow-x-auto px-4 md:px-6"
+          aria-label="Navegação principal"
         >
-          {theme === "DARK" ? <Sun size={19} /> : <Moon size={19} />}
-        </button>
-
-        <Link
-          href="/alertas"
-          className="relative rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
-          aria-label={
-            liveUnreadCount > 0
-              ? `Alertas, ${liveUnreadCount === 1 ? "1 não lido" : `${liveUnreadCount} não lidos`}`
-              : "Alertas"
-          }
-        >
-          <Bell size={19} />
-          {liveUnreadCount > 0 && (
-            <span
-              aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-              style={{ background: "var(--color-danger-strong)" }}
-            >
-              {liveUnreadCount > 9 ? "9+" : liveUnreadCount}
-            </span>
-          )}
-        </Link>
-        <span role="status" aria-live="polite" className="sr-only">
-          {announcement}
-        </span>
-
-        <div className="hidden sm:flex flex-col text-right leading-tight">
-          <span className="text-sm font-semibold">{name}</span>
-          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {ROLE_LABEL[role] ?? role}
-          </span>
-        </div>
-
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="rounded-full hover:bg-black/5 min-w-11 min-h-11 flex items-center justify-center"
-          aria-label="Sair"
-          title="Sair"
-        >
-          <LogOut size={19} />
-        </button>
+          {navItems.map((item) => {
+            const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-11 shrink-0 items-center whitespace-nowrap text-[0.6875rem] font-semibold transition-colors ${
+                  active ? "text-[var(--color-heading)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-0 h-0.5 origin-left transition-transform motion-reduce:transition-none"
+                  style={{ background: "var(--color-primary)", transform: active ? "scaleX(1)" : "scaleX(0)" }}
+                />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        {navOverflow && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-10"
+            style={{ background: "linear-gradient(to right, transparent, var(--color-card))" }}
+          />
+        )}
       </div>
     </header>
   );

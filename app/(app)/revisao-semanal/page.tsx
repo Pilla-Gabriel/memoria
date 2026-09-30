@@ -34,7 +34,7 @@ export default async function RevisaoSemanalPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Revisão Semanal</h1>
+        <h1 className="page-title mb-1">Revisão Semanal</h1>
         <p style={{ color: "var(--color-text-secondary)" }}>
           Segunda-feira: o que ficou pendente e o que priorizar. Sexta-feira: o que foi concluído e o que replanejar.
         </p>
@@ -84,7 +84,7 @@ export default async function RevisaoSemanalPage() {
                   {new Date(s.date).toLocaleDateString("pt-BR")}
                 </p>
               </div>
-              <Link href={`/checkin/${s.id}`} className="text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+              <Link href={`/checkin/${s.id}`} className="inline-flex min-h-6 min-w-11 items-center justify-end text-xs font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
                 Ver
               </Link>
             </div>

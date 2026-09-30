@@ -13,7 +13,7 @@ const manrope = Manrope({
 const sora = Sora({
   variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {

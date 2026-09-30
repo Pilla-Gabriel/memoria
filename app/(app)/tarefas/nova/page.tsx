@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dateInputToISOString } from "@/lib/date";
@@ -11,8 +11,13 @@ export default function NovaTarefaPage() {
   const router = useRouter();
   const [error, setError] = useState<FormError | null>(null);
   const [saving, setSaving] = useState(false);
+  // Trava na hora: o "disabled" só aparece na próxima renderização e cliques
+  // rápidos seguidos gravavam o registro em dobro (G-02).
+  const savingRef = useRef(false);
 
   async function handleSubmit(values: TaskFormValues) {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
 
@@ -29,6 +34,7 @@ export default function NovaTarefaPage() {
     });
 
     setSaving(false);
+    savingRef.current = false;
     if (!res.ok) {
       setError(await readFormError(res, "Não foi possível criar a tarefa."));
       return;
@@ -40,10 +46,10 @@ export default function NovaTarefaPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href="/tarefas" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/tarefas" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Nova tarefa</h1>
+        <h1 className="page-title mt-2">Nova tarefa</h1>
       </div>
 
       <TaskForm

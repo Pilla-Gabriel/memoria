@@ -68,19 +68,39 @@ function TarefasList() {
   // "Minhas".
   const canSeeTeam = session?.user?.role === "ADMIN";
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [statuses, setStatuses] = useState<string[]>(() => {
-    const s = searchParams.get("status");
-    return s ? [s] : [];
-  });
-  const [priorities, setPriorities] = useState<string[]>([]);
-  const [categoriesFilter, setCategoriesFilter] = useState<string[]>([]);
-  const [origins, setOrigins] = useState<string[]>([]);
+  // Busca, filtros e ordenação vivem na URL: antes só eram lidos dela ao
+  // abrir, então abrir uma tarefa e voltar zerava tudo (UI/UX Pro Max
+  // `state-preservation`).
+  const listParam = (key: string) => (searchParams.get(key) ?? "").split(",").filter(Boolean);
+  const [statuses, setStatuses] = useState<string[]>(() => listParam("status"));
+  const [priorities, setPriorities] = useState<string[]>(() => listParam("priority"));
+  const [categoriesFilter, setCategoriesFilter] = useState<string[]>(() => listParam("category"));
+  const [origins, setOrigins] = useState<string[]>(() => listParam("origin"));
   const [semPrazo, setSemPrazo] = useState(() => searchParams.get("semPrazo") === "true");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [scope, setScope] = useState<"mine" | "team">(() => (searchParams.get("scope") === "team" ? "team" : "mine"));
   const [loading, setLoading] = useState(true);
-  const [sortKey, setSortKey] = useState<SortKey>("dueDate");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<SortKey>(() => (searchParams.get("sort") as SortKey) || "dueDate");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() => (searchParams.get("dir") === "desc" ? "desc" : "asc"));
+
+  // replaceState (não router.replace): atualiza a URL sem nova navegação nem
+  // refetch do layout; o Next mantém useSearchParams em sincronia.
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    if (statuses.length) qs.set("status", statuses.join(","));
+    if (priorities.length) qs.set("priority", priorities.join(","));
+    if (categoriesFilter.length) qs.set("category", categoriesFilter.join(","));
+    if (origins.length) qs.set("origin", origins.join(","));
+    if (semPrazo) qs.set("semPrazo", "true");
+    if (search.trim()) qs.set("q", search.trim());
+    if (scope === "team") qs.set("scope", "team");
+    if (sortKey !== "dueDate") qs.set("sort", sortKey);
+    if (sortDir === "desc") qs.set("dir", "desc");
+    const next = qs.toString() ? `?${qs}` : location.pathname;
+    if (next !== location.search && !(next === location.pathname && !location.search)) {
+      window.history.replaceState(null, "", next);
+    }
+  }, [statuses, priorities, categoriesFilter, origins, semPrazo, search, scope, sortKey, sortDir]);
   const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -153,7 +173,7 @@ function TarefasList() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Tarefas</h1>
+        <h1 className="page-title">Tarefas</h1>
         <Link href="/tarefas/nova" className="btn-primary px-4 py-2.5 text-sm flex items-center gap-2 w-fit">
           <Plus size={16} /> Nova tarefa
         </Link>

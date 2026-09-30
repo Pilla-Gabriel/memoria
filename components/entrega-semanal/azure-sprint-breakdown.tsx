@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ExternalLink, Layers } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { StateCategoryBadge } from "@/components/entrega-semanal/badges";
+import { legendText } from "@/components/charts/legend-text";
+import { summarizeBars } from "@/components/charts/chart-summary";
 import { CHART_COLORS, chartAxisTick, chartGridStroke, chartTooltipStyle, chartLegendStyle } from "@/components/charts/chart-theme";
 import { buildUserGroups, buildHoursByPbi, roundHours, type WorkItemLite } from "@/lib/azure-work-items";
 
@@ -314,7 +316,7 @@ export function AzureSprintBreakdown() {
         className="text-xs font-semibold rounded-lg border px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-60"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+        <RefreshCw size={13} className={syncing ? "animate-spin motion-reduce:animate-none" : ""} />
         {syncing ? "Atualizando..." : "Atualizar dados"}
       </button>
     </div>
@@ -371,6 +373,7 @@ export function AzureSprintBreakdown() {
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <select
+            aria-label="Filtrar por sprint"
             value={effectiveSprintFilter}
             onChange={(e) => {
               setSprintFilterTouched(true);
@@ -389,6 +392,7 @@ export function AzureSprintBreakdown() {
             ))}
           </select>
           <select
+            aria-label="Filtrar por usuário"
             value={effectiveAssigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
             className="text-xs rounded-lg border px-2.5 py-1.5"
@@ -409,7 +413,7 @@ export function AzureSprintBreakdown() {
                 setSprintFilter(ALL);
                 setAssigneeFilter(ALL);
               }}
-              className="text-xs font-semibold"
+              className="inline-flex min-h-6 items-center text-xs font-semibold"
               style={{ color: "var(--badge-primary-fg)" }}
             >
               Limpar filtros
@@ -461,14 +465,14 @@ export function AzureSprintBreakdown() {
                 Unidades diferentes (Effort é uma estimativa em pontos, Horas é tempo registrado) — compare a
                 proporção entre pessoas, não o valor absoluto de uma barra contra a outra.
               </p>
-              <div style={{ width: "100%", height: 240 }}>
+              <div role="img" aria-label={summarizeBars("Effort e horas realizadas por usuário", effortVsRealizadoData, [{ key: "effort", label: "Effort" }, { key: "realizada", label: "Horas realizadas" }])} style={{ width: "100%", height: 240 }}>
                 <ResponsiveContainer>
                   <BarChart data={effortVsRealizadoData} layout="vertical" margin={{ left: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                     <XAxis type="number" allowDecimals={false} tick={chartAxisTick} />
                     <YAxis type="category" dataKey="name" tick={{ ...chartAxisTick, fontSize: 10 }} width={120} />
                     <Tooltip {...chartTooltipStyle} />
-                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Legend wrapperStyle={chartLegendStyle} formatter={legendText} />
                     <Bar dataKey="effort" name="Effort" fill={CHART_COLORS.danger} radius={[0, 6, 6, 0]} />
                     <Bar dataKey="realizada" name="Horas realizadas" fill={CHART_COLORS.primary} radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -481,14 +485,14 @@ export function AzureSprintBreakdown() {
               <p className="text-xs mb-3" style={{ color: "var(--color-text-secondary)" }}>
                 No escopo do filtro atual (sprint/usuário selecionados).
               </p>
-              <div style={{ width: "100%", height: 240 }}>
+              <div role="img" aria-label={summarizeBars("Horas estimadas e realizadas por usuário", estimadaVsRealizadaData, [{ key: "estimada", label: "Estimada" }, { key: "realizada", label: "Realizada" }])} style={{ width: "100%", height: 240 }}>
                 <ResponsiveContainer>
                   <BarChart data={estimadaVsRealizadaData} layout="vertical" margin={{ left: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                     <XAxis type="number" allowDecimals={false} tick={chartAxisTick} />
                     <YAxis type="category" dataKey="name" tick={{ ...chartAxisTick, fontSize: 10 }} width={120} />
                     <Tooltip {...chartTooltipStyle} />
-                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Legend wrapperStyle={chartLegendStyle} formatter={legendText} />
                     <Bar dataKey="estimada" name="Estimada" fill={CHART_COLORS.warning} radius={[0, 6, 6, 0]} />
                     <Bar dataKey="realizada" name="Realizada" fill={CHART_COLORS.primary} radius={[0, 6, 6, 0]} />
                   </BarChart>

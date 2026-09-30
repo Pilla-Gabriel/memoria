@@ -25,33 +25,30 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
   const doneCount = steps.filter((s) => s.done).length;
 
   return (
-    <div className="card p-5" style={{ borderColor: "var(--color-primary)" }}>
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="border-l-4 pl-4" style={{ borderColor: "var(--color-accent)" }}>
+      <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles size={16} style={{ color: "var(--badge-primary-fg)" }} />
-          <h2 className="font-semibold">
-            Primeiros passos
-            <span className="font-normal text-sm ml-2" style={{ color: "var(--color-text-secondary)" }}>
-              {doneCount}/{steps.length}
-            </span>
+          <Sparkles size={14} style={{ color: "var(--color-primary-ink)" }} aria-hidden="true" />
+          <h2 className="eyebrow">
+            Primeiros passos · {doneCount}/{steps.length}
           </h2>
         </div>
         <button
           onClick={dismiss}
           disabled={dismissing}
-          className="p-1 rounded-full hover:bg-black/5 shrink-0 disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
+          className="p-1 rounded-full hover:bg-[var(--color-hover)] shrink-0 disabled:opacity-60 min-w-9 min-h-9 flex items-center justify-center"
           aria-label="Dispensar"
           title="Dispensar"
         >
           <X size={16} style={{ color: "var(--color-text-secondary)" }} />
         </button>
       </div>
-      <ul className="space-y-2">
+      <ul className="flex flex-wrap gap-x-6 gap-y-1">
         {steps.map((step) => (
           <li key={step.label}>
             <Link
               href={step.href}
-              className="flex items-center gap-2.5 text-sm rounded-lg px-2 py-1.5 -mx-2 hover:bg-black/[0.03]"
+              className="flex items-center gap-2.5 text-sm rounded-lg px-2 py-1.5 -mx-2 hover:bg-[var(--color-hover)]"
             >
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"

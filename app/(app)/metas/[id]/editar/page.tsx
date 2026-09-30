@@ -4,6 +4,7 @@ import { useEffect, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { readFormError } from "@/lib/form-error";
+import { NotFoundState } from "@/components/ui/not-found-state";
 import { GoalForm, type GoalFormPayload, type GoalFormValues } from "@/components/goals/goal-form";
 
 function toDateInputValue(iso: string) {
@@ -18,11 +19,16 @@ export default function EditarMetaPage({ params }: { params: Promise<{ id: strin
   const { id } = usePromise(params);
   const router = useRouter();
   const [initialValues, setInitialValues] = useState<Partial<GoalFormValues> | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     fetch(`/api/goals/${id}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
+        if (!data?.goal) {
+          setNotFound(true);
+          return;
+        }
         const goal = data.goal;
         setInitialValues({
           title: goal.title,
@@ -56,13 +62,15 @@ export default function EditarMetaPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <Link href={`/metas/${id}`} className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href={`/metas/${id}`} className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Editar meta</h1>
+        <h1 className="page-title mt-2">Editar meta</h1>
       </div>
 
-      {initialValues ? (
+      {notFound ? (
+        <NotFoundState title="Meta não encontrada" backHref="/metas" backLabel="Voltar para metas" />
+      ) : initialValues ? (
         <GoalForm submitLabel="Salvar alterações" initialValues={initialValues} onSubmit={handleSubmit} />
       ) : (
         <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>

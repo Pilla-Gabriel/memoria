@@ -133,7 +133,7 @@ export default function AlertasPage() {
             </p>
             {!href && (
               <span
-                className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                className="text-[0.625rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
                 style={{ background: "var(--color-bg)", color: "var(--color-text-secondary)" }}
               >
                 Sem ação
@@ -147,7 +147,7 @@ export default function AlertasPage() {
               e.preventDefault();
               setRead(alert.id, !alert.read);
             }}
-            className="text-xs font-semibold"
+            className="inline-flex min-h-6 items-center text-xs font-semibold"
             style={{ color: alert.read ? "var(--color-text-secondary)" : "var(--badge-primary-fg)" }}
           >
             {alert.read ? "Marcar não lido" : "Marcar lido"}
@@ -158,7 +158,7 @@ export default function AlertasPage() {
                 e.preventDefault();
                 snooze(alert.id);
               }}
-              className="text-xs"
+              className="inline-flex min-h-6 items-center text-xs"
               style={{ color: "var(--color-text-secondary)" }}
             >
               Adiar 1 dia
@@ -169,7 +169,7 @@ export default function AlertasPage() {
     );
 
     return href ? (
-      <Link key={alert.id} href={href} className="block hover:bg-black/[0.02]">
+      <Link key={alert.id} href={href} className="block hover:bg-[var(--color-hover)]">
         {content}
       </Link>
     ) : (
@@ -188,7 +188,7 @@ export default function AlertasPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Alertas</h1>
+        <h1 className="page-title">Alertas</h1>
         <button onClick={markAllRead} className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           Marcar todos como lidos
         </button>

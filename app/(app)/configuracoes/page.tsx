@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -72,7 +73,7 @@ export default function ConfiguracoesPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Configurações</h1>
+      <h1 className="page-title">Configurações</h1>
 
       <div className="card p-6">
         <h2 className="font-semibold mb-3">Notificações</h2>
@@ -178,21 +179,23 @@ export default function ConfiguracoesPage() {
       <div className="card p-6">
         <h2 className="font-semibold mb-3">Alterar senha</h2>
         <form onSubmit={handlePasswordChange} className="space-y-3">
-          <input
-            type="password"
+          <PasswordInput
+           
             required
             aria-label="Senha atual"
+            autoComplete="current-password"
             placeholder="Senha atual"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             className="w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
             style={{ borderColor: "var(--color-border)" }}
           />
-          <input
-            type="password"
+          <PasswordInput
+           
             required
             minLength={6}
             aria-label="Nova senha"
+            autoComplete="new-password"
             placeholder="Nova senha"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}

@@ -12,7 +12,12 @@ const vapidSubject = process.env.VAPID_SUBJECT || "mailto:contato@onclick.com.br
 
 let configured = false;
 
+// Fora do serviço (npm run dev), o push iria para os dispositivos reais das
+// pessoas — o banco e as inscrições são os mesmos. Só manda com PUSH_IN_DEV=1.
+const pushAllowedHere = process.env.NODE_ENV === "production" || process.env.PUSH_IN_DEV === "1";
+
 function ensureConfigured(): boolean {
+  if (!pushAllowedHere) return false;
   if (configured) return true;
   if (!vapidPublicKey || !vapidPrivateKey) return false;
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);

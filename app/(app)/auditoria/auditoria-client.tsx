@@ -49,7 +49,7 @@ export function AuditoriaPageClient() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Auditoria</h1>
+          <h1 className="page-title mb-1">Auditoria</h1>
           <p style={{ color: "var(--color-text-secondary)" }}>Trilha completa de mudanças relevantes no sistema.</p>
         </div>
         <div className="card p-4 space-y-3">
@@ -64,7 +64,7 @@ export function AuditoriaPageClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Auditoria</h1>
+        <h1 className="page-title mb-1">Auditoria</h1>
         <p style={{ color: "var(--color-text-secondary)" }}>Trilha completa de mudanças relevantes no sistema.</p>
       </div>
 

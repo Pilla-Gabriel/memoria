@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createItem, defaultsOnly, effectiveListFor } from "@/lib/services/personalization";
 
 const schema = z.object({
-  text: z.string().min(5),
+  text: texto(5),
   category: z.enum(["DAILY", "MONDAY_REVIEW", "FRIDAY_REVIEW"]),
 });
 

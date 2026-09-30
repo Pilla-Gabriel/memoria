@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createItem, defaultsOnly, effectiveListFor } from "@/lib/services/personalization";
 
-const schema = z.object({ name: z.string().min(2, "Informe o nome da categoria") });
+const schema = z.object({ name: texto(2, "Informe o nome da categoria") });
 
 export async function GET(request: Request) {
   const session = await auth();

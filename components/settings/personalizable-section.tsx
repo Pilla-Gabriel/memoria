@@ -125,7 +125,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
               {mode === "default" && (
                 <button
                   onClick={() => mirror(item)}
-                  className="text-xs font-semibold"
+                  className="inline-flex min-h-6 items-center text-xs font-semibold"
                   style={{ color: "var(--badge-primary-fg)" }}
                   title="Descarta as personalizações de todos os usuários para este item, revertendo todo mundo ao padrão atual"
                 >
@@ -134,7 +134,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
               )}
               <button
                 onClick={() => toggle(item)}
-                className="text-xs font-semibold"
+                className="inline-flex min-h-6 items-center text-xs font-semibold"
                 style={{ color: item.active ? "var(--badge-success-fg)" : "var(--color-text-secondary)" }}
               >
                 {item.active ? "Ativo" : "Inativo"}
@@ -142,7 +142,7 @@ export function PersonalizableSection<T extends PersonalizableItem>({
               {canRemoveDirectly(item) && (
                 <button
                   onClick={() => remove(item)}
-                  className="text-xs font-semibold"
+                  className="inline-flex min-h-6 items-center text-xs font-semibold"
                   style={{ color: "var(--badge-danger-fg)" }}
                 >
                   Remover

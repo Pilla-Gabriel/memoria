@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Layers, ArrowRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { AzureSyncButton } from "@/components/entrega-semanal/azure-sync-button";
+import { legendText } from "@/components/charts/legend-text";
+import { summarizeBars } from "@/components/charts/chart-summary";
 import { CHART_COLORS, chartAxisTick, chartGridStroke, chartTooltipStyle, chartLegendStyle } from "@/components/charts/chart-theme";
 import { buildSprintGroups, buildHoursBySprint, buildHoursByAssignee, roundHours, type WorkItemLite } from "@/lib/azure-work-items";
 
@@ -179,14 +181,14 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
       <div className="grid gap-5 lg:grid-cols-2">
         <div>
           <h3 className="text-sm font-semibold mb-3">Horas por Sprint (Estimada x Realizada)</h3>
-          <div style={{ width: "100%", height: 220 }}>
+          <div role="img" aria-label={summarizeBars("Horas por sprint", sprintChartData, [{ key: "estimada", label: "Estimada" }, { key: "realizada", label: "Realizada" }])} style={{ width: "100%", height: 220 }}>
             <ResponsiveContainer>
               <BarChart data={sprintChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                 <XAxis dataKey="name" tick={chartAxisTick} />
                 <YAxis allowDecimals={false} tick={chartAxisTick} />
                 <Tooltip {...chartTooltipStyle} />
-                <Legend wrapperStyle={chartLegendStyle} />
+                <Legend wrapperStyle={chartLegendStyle} formatter={legendText} />
                 <Bar dataKey="estimada" name="Estimada" fill={CHART_COLORS.warning} radius={[6, 6, 0, 0]} />
                 <Bar dataKey="realizada" name="Realizada" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -201,14 +203,14 @@ export function AzureBreakdownTable({ syncSummary }: { syncSummary?: SyncSummary
               Nenhum work item com responsável atribuído foi encontrado.
             </p>
           ) : (
-            <div style={{ width: "100%", height: 220 }}>
+            <div role="img" aria-label={summarizeBars("Horas por responsável", assigneeChartData, [{ key: "estimada", label: "Estimada" }, { key: "realizada", label: "Realizada" }])} style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
                 <BarChart data={assigneeChartData} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                   <XAxis type="number" allowDecimals={false} tick={chartAxisTick} />
                   <YAxis type="category" dataKey="name" tick={{ ...chartAxisTick, fontSize: 10 }} width={140} />
                   <Tooltip {...chartTooltipStyle} />
-                  <Legend wrapperStyle={chartLegendStyle} />
+                  <Legend wrapperStyle={chartLegendStyle} formatter={legendText} />
                   <Bar dataKey="estimada" name="Estimada" fill={CHART_COLORS.warning} radius={[0, 6, 6, 0]} />
                   <Bar dataKey="realizada" name="Realizada" fill={CHART_COLORS.primary} radius={[0, 6, 6, 0]} />
                 </BarChart>

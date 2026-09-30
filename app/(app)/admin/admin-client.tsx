@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { PlayCircle, Pencil, UserPlus } from "lucide-react";
 import { CheckInSlotsSection } from "@/components/settings/checkin-slots-section";
 import { CheckInQuestionsSection } from "@/components/settings/checkin-questions-section";
 import { TaskCategoriesSection } from "@/components/settings/task-categories-section";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { PasswordInput } from "@/components/ui/password-input";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Badge } from "@/components/ui/badge";
 
-type User = { id: string; name: string; email: string; role: string; active: boolean };
+type User = { id: string; name: string; email: string; role: string; active: boolean; baseIds: string[] };
+type BaseOption = { id: string; name: string };
 
 const TABS = ["Usuários", "Horários de check-in", "Perguntas", "Categorias de tarefas"] as const;
 
@@ -15,6 +20,8 @@ export function AdminPageClient() {
   const { data: session } = useSession();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Usuários");
   const [users, setUsers] = useState<User[]>([]);
+  const [bases, setBases] = useState<BaseOption[]>([]);
+  const [newUserBaseIds, setNewUserBaseIds] = useState<string[]>([]);
   const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
 
   const [showNewUser, setShowNewUser] = useState(false);
@@ -24,16 +31,21 @@ export function AdminPageClient() {
   const [newUserRole, setNewUserRole] = useState("USER");
   const [newUserError, setNewUserError] = useState<string | null>(null);
   const [savingUser, setSavingUser] = useState(false);
+  // Trava síncrona: o "disabled" só chega na próxima renderização, e o 2º
+  // clique rápido voltava "e-mail já cadastrado" (mesmo defeito do G-02).
+  const savingUserRef = useRef(false);
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editUserError, setEditUserError] = useState<string | null>(null);
+  const [userActionError, setUserActionError] = useState<string | null>(null);
 
   async function loadAll() {
     const u = await fetch("/api/admin/users").then((r) => r.json());
     setUsers(u.users ?? []);
+    setBases(u.bases ?? []);
   }
 
   useEffect(() => {
@@ -41,17 +53,44 @@ export function AdminPageClient() {
   }, []);
 
   async function updateUser(id: string, data: Partial<User>) {
-    await fetch(`/api/admin/users/${id}`, {
+    setUserActionError(null);
+    const res = await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setUserActionError(json.error ?? "Não foi possível alterar este acesso.");
+    }
     loadAll();
+  }
+
+  // Perfil e ativo mudam o acesso de outra pessoa na hora: sempre confirmar.
+  function changeRole(u: User, role: string) {
+    const label = role === "ADMIN" ? "Administrador" : "Usuário";
+    if (!window.confirm(`Mudar o perfil de ${u.name} para ${label}?`)) return;
+    updateUser(u.id, { role });
+  }
+
+  function toggleActive(u: User) {
+    const msg = u.active
+      ? `Desativar ${u.name}? A pessoa perde o acesso imediatamente.`
+      : `Reativar o acesso de ${u.name}?`;
+    if (!window.confirm(msg)) return;
+    updateUser(u.id, { active: !u.active });
   }
 
   async function addUser(e: React.FormEvent) {
     e.preventDefault();
+    if (savingUserRef.current) return;
     setNewUserError(null);
+    // USER sem base cai em "Nenhuma base disponível" e não usa o app.
+    if (newUserRole === "USER" && newUserBaseIds.length === 0) {
+      setNewUserError("Escolha ao menos uma base para este usuário.");
+      return;
+    }
+    savingUserRef.current = true;
     setSavingUser(true);
     const res = await fetch("/api/admin/users", {
       method: "POST",
@@ -61,9 +100,11 @@ export function AdminPageClient() {
         email: newUserEmail,
         password: newUserPassword,
         role: newUserRole,
+        baseIds: newUserRole === "USER" ? newUserBaseIds : [],
       }),
     });
     setSavingUser(false);
+    savingUserRef.current = false;
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setNewUserError(json.error ?? "Não foi possível criar o acesso.");
@@ -73,6 +114,7 @@ export function AdminPageClient() {
     setNewUserEmail("");
     setNewUserPassword("");
     setNewUserRole("USER");
+    setNewUserBaseIds([]);
     setShowNewUser(false);
     loadAll();
   }
@@ -115,7 +157,7 @@ export function AdminPageClient() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Administração</h1>
+        <h1 className="page-title">Administração</h1>
         <div className="flex items-center gap-3">
           <button onClick={triggerCheckins} className="btn-accent px-4 py-2.5 text-sm flex items-center gap-2">
             <PlayCircle size={16} /> Disparar check-ins agora
@@ -167,7 +209,7 @@ export function AdminPageClient() {
                   required
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none max-sm:min-h-11"
                   style={{ borderColor: "var(--color-border)" }}
                 />
               </div>
@@ -177,22 +219,24 @@ export function AdminPageClient() {
                   id="admin-new-user-email"
                   required
                   type="email"
+                  autoComplete="off"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none max-sm:min-h-11"
                   style={{ borderColor: "var(--color-border)" }}
                 />
               </div>
               <div className="min-w-[140px]">
                 <label htmlFor="admin-new-user-password" className="block text-xs font-medium mb-1">Senha</label>
-                <input
+                <PasswordInput
                   id="admin-new-user-password"
                   required
-                  type="password"
+                  autoComplete="new-password"
+                  minLength={6}
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none max-sm:min-h-11"
                   style={{ borderColor: "var(--color-border)" }}
                 />
               </div>
@@ -202,13 +246,21 @@ export function AdminPageClient() {
                   id="admin-new-user-role"
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
-                  className="rounded-lg border px-3 py-2 text-sm bg-transparent"
+                  className="rounded-lg border px-3 py-2 text-sm bg-transparent max-sm:min-h-11"
                   style={{ borderColor: "var(--color-border)" }}
                 >
                   <option value="USER">Usuário</option>
                   <option value="ADMIN">Administrador</option>
                 </select>
               </div>
+              {newUserRole === "USER" && (
+                <MultiSelect
+                  label="Bases"
+                  options={bases.map((b) => ({ value: b.id, label: b.name }))}
+                  selected={newUserBaseIds}
+                  onChange={setNewUserBaseIds}
+                />
+              )}
               <button type="submit" disabled={savingUser} className="btn-primary px-4 py-2 text-sm disabled:opacity-60">
                 {savingUser ? "Criando..." : "Criar acesso"}
               </button>
@@ -220,6 +272,8 @@ export function AdminPageClient() {
             </form>
           )}
 
+          {userActionError && <ErrorBanner>{userActionError}</ErrorBanner>}
+
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -228,6 +282,7 @@ export function AdminPageClient() {
                     <th className="p-4 font-semibold">Nome</th>
                     <th className="p-4 font-semibold">E-mail</th>
                     <th className="p-4 font-semibold">Perfil</th>
+                    <th className="p-4 font-semibold">Bases</th>
                     <th className="p-4 font-semibold">Ativo</th>
                     <th className="p-4 font-semibold"></th>
                   </tr>
@@ -236,7 +291,7 @@ export function AdminPageClient() {
                   {users.map((u) =>
                     editingUserId === u.id ? (
                       <tr key={u.id} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                        <td className="p-4" colSpan={5}>
+                        <td className="p-4" colSpan={6}>
                           <div className="flex flex-wrap gap-2 items-end">
                             <div className="flex-1 min-w-[140px]">
                               <label htmlFor={`admin-edit-name-${u.id}`} className="block text-xs font-medium mb-1">Nome</label>
@@ -244,7 +299,7 @@ export function AdminPageClient() {
                                 id={`admin-edit-name-${u.id}`}
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
-                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none"
+                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none max-sm:min-h-11"
                                 style={{ borderColor: "var(--color-border)" }}
                               />
                             </div>
@@ -253,21 +308,22 @@ export function AdminPageClient() {
                               <input
                                 id={`admin-edit-email-${u.id}`}
                                 type="email"
+                                autoComplete="off"
                                 value={editEmail}
                                 onChange={(e) => setEditEmail(e.target.value)}
-                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none"
+                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none max-sm:min-h-11"
                                 style={{ borderColor: "var(--color-border)" }}
                               />
                             </div>
                             <div className="min-w-[140px]">
                               <label htmlFor={`admin-edit-password-${u.id}`} className="block text-xs font-medium mb-1">Nova senha (opcional)</label>
-                              <input
+                              <PasswordInput
                                 id={`admin-edit-password-${u.id}`}
-                                type="password"
+                                autoComplete="new-password"
                                 value={editPassword}
                                 onChange={(e) => setEditPassword(e.target.value)}
                                 placeholder="Deixe em branco para manter"
-                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none"
+                                className="w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none max-sm:min-h-11"
                                 style={{ borderColor: "var(--color-border)" }}
                               />
                             </div>
@@ -296,8 +352,9 @@ export function AdminPageClient() {
                         <td className="p-4">
                           <select
                             value={u.role}
-                            onChange={(e) => updateUser(u.id, { role: e.target.value })}
-                            className="rounded-lg border px-2 py-1.5 text-xs bg-transparent"
+                            onChange={(e) => changeRole(u, e.target.value)}
+                            aria-label={`Perfil de ${u.name}`}
+                            className="rounded-lg border px-2 py-1.5 text-xs bg-transparent max-sm:min-h-11"
                             style={{ borderColor: "var(--color-border)" }}
                           >
                             <option value="USER">Usuário</option>
@@ -305,9 +362,28 @@ export function AdminPageClient() {
                           </select>
                         </td>
                         <td className="p-4">
+                          {u.role === "ADMIN" ? (
+                            <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                              Todas
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <MultiSelect
+                                label="Bases"
+                                options={bases.map((b) => ({ value: b.id, label: b.name }))}
+                                selected={u.baseIds}
+                                onChange={(baseIds) => updateUser(u.id, { baseIds })}
+                                context={u.name}
+                              />
+                              {u.baseIds.length === 0 && <Badge tone="warning">Sem base</Badge>}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4">
                           <button
-                            onClick={() => updateUser(u.id, { active: !u.active })}
-                            className="text-xs font-semibold"
+                            onClick={() => toggleActive(u)}
+                            aria-label={u.active ? `Desativar ${u.name}` : `Reativar ${u.name}`}
+                            className="inline-flex min-h-6 items-center text-xs font-semibold"
                             style={{ color: u.active ? "var(--badge-success-fg)" : "var(--badge-danger-fg)" }}
                           >
                             {u.active ? "Ativo" : "Inativo"}

@@ -3,6 +3,7 @@
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { Paperclip, AlertTriangle, RefreshCw, Copy } from "lucide-react";
+import { NotFoundState } from "@/components/ui/not-found-state";
 import { RiskBadge, BlockerStatusBadge, SourceLabel } from "@/components/entrega-semanal/badges";
 
 type Person = { name: string };
@@ -41,6 +42,7 @@ type FrenteDetail = {
 export default function FrenteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
   const [frente, setFrente] = useState<FrenteDetail | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [isAtRisk, setIsAtRisk] = useState(false);
 
   const [snapshotValue, setSnapshotValue] = useState("");
@@ -59,6 +61,10 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
 
   async function load() {
     const res = await fetch(`/api/frentes/${id}`);
+    if (!res.ok) {
+      setNotFound(true);
+      return;
+    }
     const data = await res.json();
     setFrente(data.frente);
     setIsAtRisk(data.comparison?.isAtRisk ?? false);
@@ -69,6 +75,9 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  if (notFound) {
+    return <NotFoundState title="Frente não encontrada" backHref="/entrega-semanal" backLabel="Voltar para Entrega Semanal" />;
+  }
   if (!frente) return <p style={{ color: "var(--color-text-secondary)" }}>Carregando...</p>;
 
   // As três atualizações (número, entrega, bloqueio) viviam em formulários
@@ -154,7 +163,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/entrega-semanal" className="text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
+        <Link href="/entrega-semanal" className="inline-flex min-h-6 items-center text-sm font-semibold" style={{ color: "var(--badge-primary-fg)" }}>
           ← Voltar
         </Link>
         <Link
@@ -211,7 +220,7 @@ export default function FrenteDetailPage({ params }: { params: Promise<{ id: str
               className="text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
               style={{ color: "var(--badge-primary-fg)" }}
             >
-              <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+              <RefreshCw size={13} className={syncing ? "animate-spin motion-reduce:animate-none" : ""} />
               {syncing ? "Sincronizando..." : "Sincronizar com Azure DevOps"}
             </button>
           )}

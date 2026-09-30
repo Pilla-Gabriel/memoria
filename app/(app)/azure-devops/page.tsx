@@ -19,7 +19,7 @@ export default async function AzureDevOpsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold mb-1">Azure DevOps</h1>
+        <h1 className="page-title mb-1">Azure DevOps</h1>
         <p style={{ color: "var(--color-text-secondary)" }}>
           Work items da sprint atual por usuário — horas estimadas, realizadas, Effort e demais campos do processo.
         </p>

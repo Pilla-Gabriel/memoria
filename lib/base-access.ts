@@ -42,3 +42,30 @@ export async function getActiveUserIdsWithBaseAccess(baseId: string): Promise<st
   ]);
   return Array.from(new Set([...admins.map((u) => u.id), ...grants.map((g) => g.userId)]));
 }
+
+// Base "de casa" do usuário para o que é da PESSOA e não da base (check-in
+// diário e revisão semanal): a mais antiga entre as que ele acessa. Os jobs
+// rodam uma vez por base e o horário de check-in não tem base — sem isso,
+// quem acessa N bases (todo ADMIN) recebia N check-ins e N notificações por
+// horário (achado G-12 da auditoria Gengar, 2026-09-25).
+export async function getHomeBaseIdsByUser(userIds: string[]): Promise<Map<string, string>> {
+  const home = new Map<string, string>();
+  if (userIds.length === 0) return home;
+  const [users, bases, grants] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, role: true } }),
+    prisma.base.findMany({ select: { id: true }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] }),
+    prisma.userBase.findMany({ where: { userId: { in: userIds } }, select: { userId: true, baseId: true } }),
+  ]);
+  const order = new Map(bases.map((b, i) => [b.id, i]));
+  for (const user of users) {
+    if (user.role === "ADMIN") {
+      if (bases[0]) home.set(user.id, bases[0].id);
+      continue;
+    }
+    const mine = grants
+      .filter((g) => g.userId === user.id && order.has(g.baseId))
+      .sort((a, b) => order.get(a.baseId)! - order.get(b.baseId)!);
+    if (mine[0]) home.set(user.id, mine[0].baseId);
+  }
+  return home;
+}

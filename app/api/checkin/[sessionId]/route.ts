@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getQuestionsFor, isActionableAnswer } from "@/lib/services/checkin";
 import { z } from "zod";
+import { texto } from "@/lib/validation";
 import { withBase } from "@/lib/with-base";
 
 const submitSchema = z.object({
-  answers: z.array(z.object({ questionId: z.string(), text: z.string().min(1) })),
+  answers: z.array(z.object({ questionId: z.string(), text: texto(1) })),
 });
 
 export const GET = withBase<{ params: Promise<{ sessionId: string }> }>(async (_request, ctx, session) => {
@@ -32,10 +33,15 @@ export const POST = withBase<{ params: Promise<{ sessionId: string }> }>(async (
     return NextResponse.json({ error: "Sessão não encontrada" }, { status: 404 });
   }
 
+  // Clique duplo em "Finalizar" gravava as respostas duas vezes.
+  if (checkInSession.status === "RESPONDIDO") {
+    return NextResponse.json({ error: "Este check-in já foi respondido." }, { status: 409 });
+  }
+
   const body = await request.json();
   const parsed = submitSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+    return NextResponse.json({ error: "Responda todas as perguntas com texto antes de finalizar." }, { status: 400 });
   }
 
   const createdAnswers = [];

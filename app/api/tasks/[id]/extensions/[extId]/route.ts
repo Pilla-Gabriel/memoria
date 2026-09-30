@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isManager } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit";
 import { withBase } from "@/lib/with-base";
-import { getScopedTask } from "@/lib/base-guards";
+import { getVisibleTask } from "@/lib/base-guards";
 
 const schema = z.object({ decision: z.enum(["APROVADA", "REJEITADA"]) });
 
@@ -18,7 +18,7 @@ export const PATCH = withBase<{ params: Promise<{ id: string; extId: string }> }
   // Valida o pai (Task) escopado pela base ativa ANTES de tocar na
   // prorrogação — TaskExtensionRequest não tem baseId próprio, então
   // validar depois de já ter escrito não protegeria nada.
-  const task = await getScopedTask(id);
+  const task = await getVisibleTask(id, session.user);
   if (!task) return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
 
   const extension = await prisma.taskExtensionRequest.findUnique({ where: { id: extId } });

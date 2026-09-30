@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 import { DateQuickPicks } from "@/components/ui/date-quick-picks";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { FieldError, bannerMessage, fieldErrorProps, useFocusFieldError } from "@/components/ui/field-error";
@@ -42,6 +44,17 @@ export function TaskForm({
   const [priority, setPriority] = useState(initialValues.priority);
   const [category, setCategory] = useState(initialValues.category);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
+  const dirty =
+    !saving &&
+    (title !== initialValues.title ||
+      description !== initialValues.description ||
+      dueDate !== initialValues.dueDate ||
+      priority !== initialValues.priority ||
+      category !== initialValues.category);
+  useUnsavedChanges(dirty);
 
   useEffect(() => {
     fetch("/api/admin/task-categories")
@@ -61,6 +74,7 @@ export function TaskForm({
       }}
       className="card p-6 space-y-4"
     >
+      <p className="required-legend">obrigatório</p>
       <div>
         <label htmlFor="task-title" className="block text-sm font-medium mb-1.5">Título</label>
         <input
@@ -145,7 +159,9 @@ export function TaskForm({
         </select>
         <FieldError error={error} field="category" inputId="task-category" />
         <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-          Cadastre novas categorias em Administração → Categorias de tarefas.
+          {isAdmin
+            ? "Cadastre novas categorias em Administração → Categorias de tarefas."
+            : "Não achou a categoria? Peça a um administrador para cadastrar."}
         </p>
       </div>
 
